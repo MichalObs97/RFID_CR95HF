@@ -367,16 +367,16 @@ static void uart_process_command(char *cmd)
     	}
     }
     else if (strcasecmp(token, "INIT14") == 0) {
-    	cr95_init14443();
+    	cr95_init14();
     }
     else if (strcasecmp(token, "INIT14B") == 0) {
-        	cr95_init14443();
+        	cr95_init14B();
         }
     else if (strcasecmp(token, "INIT15") == 0) {
-        	cr95_init14443();
+        	cr95_init15();
         }
     else if (strcasecmp(token, "INIT18") == 0) {
-        	cr95_init14443();
+        	cr95_init18();
         }
     else if (strcasecmp(token, "READ") == 0) {
     	cr95_read();
