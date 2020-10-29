@@ -125,6 +125,12 @@ uint8_t cr95read(uint8_t *data, uint8_t *length)
     return resp;
 }
 
+static void cr95_wakeup(void)
+{
+	const uint8_t wakeup = 0;
+	cr95write(&wakeup, 1);
+	printf("WAKEUP sent\n");
+}
 
 static void cr95_init14(void)
 {
@@ -133,7 +139,7 @@ static void cr95_init14(void)
 	const uint8_t cmd_init3[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0xD1 };
 
 	cr95write(cmd_init1, sizeof(cmd_init1));
-	printf("INIT %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
+	printf("Initiation of 14 %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init2, sizeof(cmd_init2));
 	printf(" %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init3, sizeof(cmd_init3));
@@ -147,7 +153,7 @@ static void cr95_init14B(void)
 	const uint8_t cmd_init3B[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0x20 };
 
 	cr95write(cmd_init1B, sizeof(cmd_init1B));
-	printf("INIT %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
+	printf("Initiation of 14B %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init2B, sizeof(cmd_init2B));
 	printf(" %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init3B, sizeof(cmd_init3B));
@@ -161,7 +167,7 @@ static void cr95_init15(void)
 	const uint8_t cmd_init3_15[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0xD0 };
 
 	cr95write(cmd_init1_15, sizeof(cmd_init1_15));
-	printf("INIT %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
+	printf("Initiation of 15 %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init2_15, sizeof(cmd_init2_15));
 	printf(" %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init3_15, sizeof(cmd_init3_15));
@@ -175,19 +181,11 @@ static void cr95_init18(void)
 	const uint8_t cmd_init3_18[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0x50 };
 
 	cr95write(cmd_init1_18, sizeof(cmd_init1_18));
-	printf("INIT %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
+	printf("Initiation of 18 %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init2_18, sizeof(cmd_init2_18));
 	printf(" %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init3_18, sizeof(cmd_init3_18));
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
-}
-
-
-static void cr95_wakeup(void)
-{
-	const uint8_t wakeup = 0;
-	cr95write(&wakeup, 1);
-	printf("WAKEUP sent\n");
 }
 
 
@@ -312,8 +310,8 @@ static void cr95_idle(uint8_t mode)
 {
 	uint8_t cmd_idle[] =  		{ 0x07, 0x0E, 0x0A, 0x21, 0x00, 0x79, 0x01, 0x18, 0x00, 0x20, 0x60, 0x60, 0x00, 0x00, 0x3F, 0x08 };
 
-	if (mode == 1) cmd_idle[2] = 0x08; // LowOnIRQ
-	else cmd_idle[2] = 0x0A; // TagDetect+LowOnIRQ
+	if (mode == 1) cmd_idle[2] = 0x08;   // Hibernate
+	else cmd_idle[2] = 0x0A;             // TagDetect
 
 	cmd_idle[12] = DacDataRef - 8;
 	cmd_idle[13] = DacDataRef + 8;
@@ -402,7 +400,7 @@ static void uart_process_command(char *cmd)
 			if (resp == 0x00 && data[0] == 0x02) printf("WAKEUP by tag detect\n");
 			else printf("Error\n");
 			printf("Code of wakeup is:%02X\n", data[0]);
-        	cr95_init14443();
+        	cr95_init14();
         	cr95_read();
         	HAL_Delay(2000);
     	} while (uart_rx_read_ptr == uart_rx_write_ptr);
