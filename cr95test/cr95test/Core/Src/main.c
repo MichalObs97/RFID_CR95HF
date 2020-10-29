@@ -126,7 +126,7 @@ uint8_t cr95read(uint8_t *data, uint8_t *length)
 }
 
 
-static void cr95_init14443(void)
+static void cr95_init14(void)
 {
 	const uint8_t cmd_init1[] = { 0x02, 0x02, 0x02, 0x00 };
 	const uint8_t cmd_init2[] = { 0x09, 0x04, 0x3A, 0x00, 0x58, 0x04 };
@@ -140,7 +140,7 @@ static void cr95_init14443(void)
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
 
-static void cr95_init14443B(void)
+static void cr95_init14B(void)
 {
 	const uint8_t cmd_init1B[] = { 0x02, 0x02, 0x03, 0x01 };
 	const uint8_t cmd_init2B[] = { 0x09, 0x04, 0x3A, 0x00, 0x58, 0x04 };
@@ -154,7 +154,7 @@ static void cr95_init14443B(void)
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
 
-static void cr95_init15693(void)
+static void cr95_init15(void)
 {
 	const uint8_t cmd_init1_15[] = { 0x02, 0x02, 0x01, 0x03 };
 	const uint8_t cmd_init2_15[] = { 0x09, 0x04, 0x3A, 0x00, 0x58, 0x04 };
@@ -168,7 +168,7 @@ static void cr95_init15693(void)
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
 
-static void cr95_init18092(void)
+static void cr95_init18(void)
 {
 	const uint8_t cmd_init1_18[] = { 0x02, 0x02, 0x04, 0x51 };
 	const uint8_t cmd_init2_18[] = { 0x09, 0x04, 0x3A, 0x00, 0x58, 0x04 };
@@ -366,9 +366,18 @@ static void uart_process_command(char *cmd)
     		printf("IDN error\n");
     	}
     }
-    else if (strcasecmp(token, "INIT") == 0) {
+    else if (strcasecmp(token, "INIT14") == 0) {
     	cr95_init14443();
     }
+    else if (strcasecmp(token, "INIT14B") == 0) {
+        	cr95_init14443();
+        }
+    else if (strcasecmp(token, "INIT15") == 0) {
+        	cr95_init14443();
+        }
+    else if (strcasecmp(token, "INIT18") == 0) {
+        	cr95_init14443();
+        }
     else if (strcasecmp(token, "READ") == 0) {
     	cr95_read();
     }
