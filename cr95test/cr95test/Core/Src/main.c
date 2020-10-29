@@ -339,7 +339,7 @@ static void uart_process_command(char *cmd)
     	MX_USART1_UART_Init();
         HAL_UART_Receive_DMA(&huart1, nfc_rx_buf, RX_BUFFER_LEN);
     	HAL_Delay(5);
-    	printf("Enabled\n");
+    	printf("RFID ON\n");
         nfc_rx_read_ptr = nfc_rx_write_ptr;
     	cr95_wakeup();
     	nfc_ready = true;
@@ -349,7 +349,7 @@ static void uart_process_command(char *cmd)
         HAL_UART_AbortReceive(&huart1);
     	HAL_UART_DeInit(&huart1);
     	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
-    	printf("Disabled\n");
+    	printf("RFID OFF\n");
     }
     else if (strcasecmp(token, "ECHO") == 0) {
     	cr95write(cmd_echo, sizeof(cmd_echo));
@@ -370,14 +370,14 @@ static void uart_process_command(char *cmd)
     	cr95_init14();
     }
     else if (strcasecmp(token, "INIT14B") == 0) {
-        	cr95_init14B();
-        }
+        cr95_init14B();
+    }
     else if (strcasecmp(token, "INIT15") == 0) {
-        	cr95_init15();
-        }
+        cr95_init15();
+    }
     else if (strcasecmp(token, "INIT18") == 0) {
-        	cr95_init18();
-        }
+        cr95_init18();
+    }
     else if (strcasecmp(token, "READ") == 0) {
     	cr95_read();
     }
