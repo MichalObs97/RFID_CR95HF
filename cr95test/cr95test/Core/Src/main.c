@@ -179,12 +179,16 @@ static void cr95_init18(void)
 	const uint8_t cmd_init1_18[] = { 0x02, 0x02, 0x04, 0x51 };
 	const uint8_t cmd_init2_18[] = { 0x09, 0x04, 0x3A, 0x00, 0x58, 0x04 };
 	const uint8_t cmd_init3_18[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0x50 };
+	const uint8_t cmd_init4_18[] = { 0x09, 0x04, 0x0A, 0x01, 0x02, 0xA1 };
+
 
 	cr95write(cmd_init1_18, sizeof(cmd_init1_18));
 	printf("Initiation of 18 %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init2_18, sizeof(cmd_init2_18));
 	printf(" %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init3_18, sizeof(cmd_init3_18));
+	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
+	cr95write(cmd_init4_18, sizeof(cmd_init4_18));
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
 
@@ -261,6 +265,35 @@ static void cr95_read(void)
 	}
 }
 
+static void cr95_read14B(void)
+{
+	const uint8_t cmd_reqb[] =  { 0x04, 0x03, 0x05, 0x00, 0x00 };
+
+	uint8_t data[16];
+	char uid[32];
+	uint8_t len;
+
+	cr95write(cmd_reqb, sizeof(cmd_reqb));
+	if (cr95read(data, &len) == 0x80 && data[0]=0x50) {
+		printf("ATQB =");
+		for (uint8_t i = 0; i <= len; i++) printf(" %02X", data[i]);
+		printf("\n");
+}
+
+static void cr95_read18(void)
+{
+	const uint8_t cmd_req18[] =  { 0x04, 0x05, 0x00, 0xFF, 0xFF, 0x00, 0x00 };
+
+	uint8_t data[16];
+	char uid[32];
+	uint8_t len;
+
+	cr95write(cmd_req18, sizeof(cmd_req18));
+	if (cr95read(data, &len) == 0x80 && data[0]=0x01) {
+		printf("ISO/IEC 18092 DATA =");
+		for (uint8_t i = 0; i <= len; i++) printf(" %02X", data[i]);
+		printf("\n");
+}
 
 static void cr95_calibrate(void)
 {
@@ -378,6 +411,12 @@ static void uart_process_command(char *cmd)
     }
     else if (strcasecmp(token, "READ") == 0) {
     	cr95_read();
+    }
+    else if (strcasecmp(token, "READ14B") == 0) {
+        cr95_read14B();
+    }
+    else if (strcasecmp(token, "READ18") == 0) {
+        cr95_read18();
     }
     else if (strcasecmp(token, "CALIBRATE") == 0) {
     	cr95_calibrate();
