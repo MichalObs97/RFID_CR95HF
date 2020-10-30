@@ -251,7 +251,7 @@ static void cr95_read(void)
 				}
 
     		} else {
-    			sprintf(uid, "%s %2X %2X %2X %2X", uid, data[0], data[1], data[2], data[3]);
+    			sprintf(uid, "%s %2X %2X %2X %2X", uid, data[1], data[2], data[3], data[4]);
     		}
 
 
@@ -265,34 +265,63 @@ static void cr95_read(void)
 	}
 }
 
+static void cr95_readtopaz(void)
+{
+	const uint8_t cmd_reqtopaz[] =  { 0x04, 0x02, 0x26, 0x07 };
+	const uint8_t cmd_rid[]      =  { 0x04, 0x08, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA8 };
+
+	uint8_t data[16];
+	char uid[32];
+	uint8_t len;
+
+	cr95write(cmd_reqtopaz, sizeof(cmd_reqtopaz));
+	if (cr95read(data, &len) == 0x80) {
+		printf("ATQA =");
+		for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
+		printf("\n");
+
+		sprintf(uid, "UID =");
+
+		cr95write(cmd_rid, sizeof(cmd_rid));
+		if (cr95read(data, &len) == 0x80 ) {
+			printf("RID =");
+			for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
+			printf("\n");
+			printf("Header 1 = %2X", data[0]);
+			printf("Header 2 = %2X", data[1]);
+			sprintf(uid, "%s %2X %2X %2X %2X", uid, data[2], data[3], data[4], data[5]);
+		}
+	}
+}
+
 static void cr95_read14B(void)
 {
 	const uint8_t cmd_reqb[] =  { 0x04, 0x03, 0x05, 0x00, 0x00 };
 
 	uint8_t data[16];
-	char uid[32];
 	uint8_t len;
 
 	cr95write(cmd_reqb, sizeof(cmd_reqb));
-	if (cr95read(data, &len) == 0x80 && data[0]=0x50) {
+	if (cr95read(data, &len) == 0x80 && data[0] == 0x50) {
 		printf("ATQB =");
 		for (uint8_t i = 0; i <= len; i++) printf(" %02X", data[i]);
 		printf("\n");
+	}
 }
 
 static void cr95_read18(void)
 {
-	const uint8_t cmd_req18[] =  { 0x04, 0x05, 0x00, 0xFF, 0xFF, 0x00, 0x00 };
+	const uint8_t cmd_reqc[] =  { 0x04, 0x05, 0x00, 0xFF, 0xFF, 0x00, 0x00 };
 
 	uint8_t data[16];
-	char uid[32];
 	uint8_t len;
 
-	cr95write(cmd_req18, sizeof(cmd_req18));
-	if (cr95read(data, &len) == 0x80 && data[0]=0x01) {
+	cr95write(cmd_reqc, sizeof(cmd_reqc));
+	if (cr95read(data, &len) == 0x80) {
 		printf("ISO/IEC 18092 DATA =");
 		for (uint8_t i = 0; i <= len; i++) printf(" %02X", data[i]);
 		printf("\n");
+	}
 }
 
 static void cr95_calibrate(void)
@@ -412,6 +441,9 @@ static void uart_process_command(char *cmd)
     else if (strcasecmp(token, "READ") == 0) {
     	cr95_read();
     }
+    else if (strcasecmp(token, "READTOPAZ") == 0) {
+        cr95_readtopaz();
+       }
     else if (strcasecmp(token, "READ14B") == 0) {
         cr95_read14B();
     }
