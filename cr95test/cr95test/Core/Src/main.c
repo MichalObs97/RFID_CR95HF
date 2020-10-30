@@ -219,19 +219,19 @@ static void cr95_read(void)
     		printf("\n");
 
 
-    		if (data[5] & 0x80) printf("Collision detected!\n");
+    		if (data[5] & 0x80) printf("Collision detected!\n");                                                         //not sure if 0x80 is correct
     		if (data[0] == 0x88) {
-    			sprintf(uid, "%s %2X %2X %2X", uid, data[1], data[2], data[3]);
+    			sprintf(uid, "%s %2X %2X %2X\n", uid, data[1], data[2], data[3]);
 
 				cr95write(cmd_acl2, sizeof(cmd_acl2));
-				if (cr95read(data, &len) == 0x80 && len == 9 && (data[0]^data[1]^data[2]^data[3]) == data[4]) {
+				if (cr95read(data, &len) == 0x80 && (data[0]^data[1]^data[2]^data[3]) == data[4]) {
 					printf("UID CL2 =");
 					for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
 					printf("\n");
 
 		    		if (data[5] & 0x80) printf("Collision detected!\n");
 		    		if (data[0] == 0x88) {
-		    			sprintf(uid, "%s %2X %2X %2X", uid, data[1], data[2], data[3]);
+		    			sprintf(uid, "%s %2X %2X %2X\n", uid, data[1], data[2], data[3]);
 						/*cr95write(cmd_acl3, sizeof(cmd_acl3));
 						if (cr95read(data, &len) == 0x80 && len == 8 && (data[0]^data[1]^data[2]^data[3]) == data[4]) {
 							printf("UID CL3 =");
@@ -244,14 +244,14 @@ static void cr95_read(void)
 							printf("UID CL3 error\n");
 						} */
 		    		} else {
-		    			sprintf(uid, "%s %2X %2X %2X %2X", uid, data[0], data[1], data[2], data[3]);
+		    			sprintf(uid, "%s %2X %2X %2X %2X\n", uid, data[0], data[1], data[2], data[3]);
 		    		}
 				} else {
 					printf("UID CL2 error\n");
 				}
 
     		} else {
-    			sprintf(uid, "%s %2X %2X %2X %2X", uid, data[1], data[2], data[3], data[4]);
+    			sprintf(uid, "%s %2X %2X %2X %2X\n", uid, data[0], data[1], data[2], data[3]);
     		}
 
 
