@@ -192,7 +192,6 @@ static void cr95_init18(void)
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
 
-
 static void cr95_read(void)
 {
 	const uint8_t cmd_reqa[] =  { 0x04, 0x02, 0x26, 0x07 };
@@ -200,6 +199,7 @@ static void cr95_read(void)
 	const uint8_t cmd_acl2[] =  { 0x04, 0x03, 0x95, 0x20, 0x08 };
 
 	uint8_t data[8];
+	uint8_t saved_data[10] =  { 0x04, 0x08, 0x93, 0x70, 0x00, 0x00, 0x00, 0x00,  0x00, 0x28};
 	char uid[32];
 	uint8_t len;
 
@@ -214,44 +214,57 @@ static void cr95_read(void)
     	cr95write(cmd_acl1, sizeof(cmd_acl1));
     	if (cr95read(data, &len) == 0x80 && len == 8 && (data[0]^data[1]^data[2]^data[3]) == data[4]) {
     		printf("UID CL1 =");
-
     		for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
     		printf("\n");
+    		saved_data[4] = data[0];
+			saved_data[5] = data[1];
+			saved_data[6] = data[2];
+			saved_data[7] = data[3];
+			saved_data[8] = data[4];
 
-
-    		if (data[5] & 0x80) printf("Collision detected!\n");                                                         //not sure if 0x80 is correct
-    		if (data[0] == 0x88) {
-    			sprintf(uid, "%s %2X %2X %2X\n", uid, data[1], data[2], data[3]);
-
-				cr95write(cmd_acl2, sizeof(cmd_acl2));
-				if (cr95read(data, &len) == 0x80 && (data[0]^data[1]^data[2]^data[3]) == data[4]) {
-					printf("UID CL2 =");
+			if (data[0] == 0x88) {
+				printf("Collision detected, longer UID!\n");
+				cr95write(saved_data, sizeof(saved_data));
+				if (cr95read(data, &len) == 0x80) {
+					printf("SEL1 Response =");
 					for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
 					printf("\n");
-
-		    		if (data[5] & 0x80) printf("Collision detected!\n");
-		    		if (data[0] == 0x88) {
-		    			sprintf(uid, "%s %2X %2X %2X\n", uid, data[1], data[2], data[3]);
-						/*cr95write(cmd_acl3, sizeof(cmd_acl3));
-						if (cr95read(data, &len) == 0x80 && len == 8 && (data[0]^data[1]^data[2]^data[3]) == data[4]) {
-							printf("UID CL3 =");
-							for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
-							printf("\n");
-
-				    		if (data[5] & 0x80) printf("Collision detected!\n");
-			    			sprintf(uid, "%s %2X %2X %2X %2X", uid, data[0], data[1], data[2], data[3]);
-						} else {
-							printf("UID CL3 error\n");
-						} */
-		    		} else {
-		    			sprintf(uid, "%s %2X %2X %2X %2X\n", uid, data[0], data[1], data[2], data[3]);
-		    		}
-				} else {
-					printf("UID CL2 error\n");
 				}
 
+				if (data[0] != 0x00) {
+				   cr95write(cmd_acl2, sizeof(cmd_acl2));
+				   if (cr95read(data, &len) == 0x80 && (data[0]^data[1]^data[2]^data[3]) == data[4]) {
+				    	printf("UID CL2 =");
+				    	for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
+				    	printf("\n");
+				    	sprintf(uid, "%s %2X %2X %2X %2X %2X %2X %2X\n", uid, saved_data[5], saved_data[6], saved_data[7], data[0], data[1], data[2], data[3]);
+				    	saved_data[2] = 0x95;
+				    	saved_data[4] = data[0];
+				    	saved_data[5] = data[1];
+				    	saved_data[6] = data[2];
+				    	saved_data[7] = data[3];
+				    	saved_data[8] = data[4];
+
+				    	cr95write(saved_data, sizeof(saved_data));
+				    	if (cr95read(data, &len) == 0x80) {
+				    		printf("SEL2 Response =");
+				    		for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
+				    		printf("\n");
+				    	}
+				    } else {
+				    	printf("UID CL2 error\n");
+				    }
+				} else {
+					printf("SEL CL1 error\n");
+				}
     		} else {
-    			sprintf(uid, "%s %2X %2X %2X %2X\n", uid, data[0], data[1], data[2], data[3]);
+    			cr95write(saved_data, sizeof(saved_data));
+    			if (cr95read(data, &len) == 0x80) {
+    				printf("SEL1 Response =");
+    				for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
+    				printf("\n");
+    			}
+    			sprintf(uid, "%s %2X %2X %2X %2X\n", uid, saved_data[4], saved_data[5], saved_data[6], saved_data[7]);
     		}
 
 
@@ -259,7 +272,6 @@ static void cr95_read(void)
     	} else {
     		printf("UID CL1 error\n");
     	}
-
 	} else {
 		printf("REQA error\n");
 	}
