@@ -148,7 +148,7 @@ static void cr95_init14(void)
 
 static void cr95_init14B(void)
 {
-	const uint8_t cmd_init1B[] = { 0x02, 0x02, 0x03, 0x01 };
+	const uint8_t cmd_init1B[] = { 0x02, 0x02, 0x03, 0xF1 };
 	const uint8_t cmd_init2B[] = { 0x09, 0x04, 0x3A, 0x00, 0x58, 0x04 };
 	const uint8_t cmd_init3B[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0x20 };
 
@@ -187,7 +187,7 @@ static void cr95_init18(void)
 	cr95write(cmd_init2_18, sizeof(cmd_init2_18));
 	printf(" %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init3_18, sizeof(cmd_init3_18));
-	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
+	printf(" %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init4_18, sizeof(cmd_init4_18));
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
@@ -318,6 +318,8 @@ static void cr95_read14B(void)
 		printf("ATQB =");
 		for (uint8_t i = 0; i <= len; i++) printf(" %02X", data[i]);
 		printf("\n");
+	} else {
+		printf("REQB error\n");
 	}
 }
 
@@ -333,6 +335,8 @@ static void cr95_read18(void)
 		printf("ISO/IEC 18092 DATA =");
 		for (uint8_t i = 0; i <= len; i++) printf(" %02X", data[i]);
 		printf("\n");
+	}  else {
+		printf("Error\n");
 	}
 }
 
@@ -523,7 +527,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -581,8 +585,8 @@ int main(void)
 	  HAL_Delay(2000);
 
 
-	/*  do {
-		  cr95_init14443();
+	  do {
+		  cr95_init14();
 		  cr95_read();
 
 		  cr95_idle(1);
@@ -590,7 +594,7 @@ int main(void)
 		  HAL_Delay(500);
 		  cr95_wakeup(); cr95read(NULL, NULL);
 		  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-	  } while (1); */
+	  } while (1);
 
 
 #endif
