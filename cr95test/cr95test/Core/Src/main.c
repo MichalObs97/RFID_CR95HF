@@ -17,7 +17,6 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
-
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
@@ -27,6 +26,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include "ssd1306.h"
+#include "fonts.h"
+#include "test.h"
 
 /* USER CODE END Includes */
 
@@ -45,6 +47,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
+
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart1_rx;
@@ -68,6 +72,7 @@ static volatile uint16_t nfc_rx_read_ptr = 0;
 static uint8_t DacDataRef;
 static bool nfc_ready = false;
 static bool printf_en = true;
+uint8_t disp_len;
 
 /* USER CODE END PV */
 
@@ -77,6 +82,7 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -132,11 +138,25 @@ static void cr95_wakeup(void)
 	printf("WAKEUP sent\n");
 }
 
+static void cr95_idle(uint8_t mode)
+{
+	uint8_t cmd_idle[] =  		{ 0x07, 0x0E, 0x0A, 0x21, 0x00, 0x79, 0x01, 0x18, 0x00, 0x20, 0x60, 0x60, 0x00, 0x00, 0x3F, 0x08 };
+
+	if (mode == 1) cmd_idle[2] = 0x08;   // Hibernate
+	else cmd_idle[2] = 0x0A;             // TagDetect
+
+	cmd_idle[12] = DacDataRef - 8;
+	cmd_idle[13] = DacDataRef + 8;
+	cr95write(cmd_idle, sizeof(cmd_idle));
+	printf("IDLE sent\n");
+}
+
 static void cr95_init14(void)
 {
 	const uint8_t cmd_init1[] = { 0x02, 0x02, 0x02, 0x00 };
-	const uint8_t cmd_init2[] = { 0x09, 0x04, 0x3A, 0x00, 0x58, 0x04 };
-	const uint8_t cmd_init3[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0xD1 };
+	const uint8_t cmd_init2[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0xD1 };
+	const uint8_t cmd_init3[] = { 0x09, 0x04, 0x3A, 0x00, 0x58, 0x04 };
+
 
 	cr95write(cmd_init1, sizeof(cmd_init1));
 	printf("Initiation of 14 %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
@@ -149,46 +169,37 @@ static void cr95_init14(void)
 static void cr95_init14B(void)
 {
 	const uint8_t cmd_init1B[] = { 0x02, 0x02, 0x03, 0xF1 };
-	const uint8_t cmd_init2B[] = { 0x09, 0x04, 0x3A, 0x00, 0x58, 0x04 };
-	const uint8_t cmd_init3B[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0x20 };
+	const uint8_t cmd_init2B[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0x20 };
 
 	cr95write(cmd_init1B, sizeof(cmd_init1B));
 	printf("Initiation of 14B %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init2B, sizeof(cmd_init2B));
-	printf(" %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
-	cr95write(cmd_init3B, sizeof(cmd_init3B));
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
 
 static void cr95_init15(void)
 {
 	const uint8_t cmd_init1_15[] = { 0x02, 0x02, 0x01, 0x03 };
-	const uint8_t cmd_init2_15[] = { 0x09, 0x04, 0x3A, 0x00, 0x58, 0x04 };
-	const uint8_t cmd_init3_15[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0xD0 };
+	const uint8_t cmd_init2_15[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0xD0 };
 
 	cr95write(cmd_init1_15, sizeof(cmd_init1_15));
 	printf("Initiation of 15 %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init2_15, sizeof(cmd_init2_15));
-	printf(" %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
-	cr95write(cmd_init3_15, sizeof(cmd_init3_15));
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
 
 static void cr95_init18(void)
 {
 	const uint8_t cmd_init1_18[] = { 0x02, 0x02, 0x04, 0x51 };
-	const uint8_t cmd_init2_18[] = { 0x09, 0x04, 0x3A, 0x00, 0x58, 0x04 };
-	const uint8_t cmd_init3_18[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0x50 };
-	const uint8_t cmd_init4_18[] = { 0x09, 0x04, 0x0A, 0x01, 0x02, 0xA1 };
+	const uint8_t cmd_init2_18[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0x50 };
+	const uint8_t cmd_init3_18[] = { 0x09, 0x04, 0x0A, 0x01, 0x02, 0xA1 };
 
 
 	cr95write(cmd_init1_18, sizeof(cmd_init1_18));
 	printf("Initiation of 18 %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
-	cr95write(cmd_init2_18, sizeof(cmd_init2_18));
+	cr95write(cmd_init2_18, sizeof(cmd_init3_18));
 	printf(" %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 	cr95write(cmd_init3_18, sizeof(cmd_init3_18));
-	printf(" %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
-	cr95write(cmd_init4_18, sizeof(cmd_init4_18));
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
 
@@ -203,27 +214,24 @@ static void cr95_read(void)
 	char uid[32];
 	uint8_t len;
 
+
 	cr95write(cmd_reqa, sizeof(cmd_reqa));
 	if (cr95read(data, &len) == 0x80) {
 		printf("ATQA =");
 		for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
 		printf("\n");
 
-    	sprintf(uid, "UID =");
+    	sprintf(uid, "UID=");
 
     	cr95write(cmd_acl1, sizeof(cmd_acl1));
     	if (cr95read(data, &len) == 0x80 && len == 8 && (data[0]^data[1]^data[2]^data[3]) == data[4]) {
     		printf("UID CL1 =");
     		for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
     		printf("\n");
-    		saved_data[4] = data[0];
-			saved_data[5] = data[1];
-			saved_data[6] = data[2];
-			saved_data[7] = data[3];
-			saved_data[8] = data[4];
+    		saved_data[4] = data[0]; saved_data[5] = data[1]; saved_data[6] = data[2]; saved_data[7] = data[3]; saved_data[8] = data[4];
 
 			if (data[0] == 0x88) {
-				printf("Collision detected, longer UID!\n");
+				printf("Cascade bit detected, longer UID!\n");
 				cr95write(saved_data, sizeof(saved_data));
 				if (cr95read(data, &len) == 0x80) {
 					printf("SEL1 Response =");
@@ -231,31 +239,29 @@ static void cr95_read(void)
 					printf("\n");
 				}
 
-				if (data[0] != 0x00) {
+				if (data[0] != 0x08) {
 				   cr95write(cmd_acl2, sizeof(cmd_acl2));
 				   if (cr95read(data, &len) == 0x80 && (data[0]^data[1]^data[2]^data[3]) == data[4]) {
 				    	printf("UID CL2 =");
 				    	for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
 				    	printf("\n");
-				    	sprintf(uid, "%s %2X %2X %2X %2X %2X %2X %2X\n", uid, saved_data[5], saved_data[6], saved_data[7], data[0], data[1], data[2], data[3]);
-				    	saved_data[2] = 0x95;
-				    	saved_data[4] = data[0];
-				    	saved_data[5] = data[1];
-				    	saved_data[6] = data[2];
-				    	saved_data[7] = data[3];
-				    	saved_data[8] = data[4];
+				    	sprintf(uid, "%s%X%X%X%X%X%X%X", uid, saved_data[5], saved_data[6], saved_data[7], data[0], data[1], data[2], data[3]);
+				    	saved_data[2] = 0x95; saved_data[4] = data[0]; saved_data[5] = data[1]; saved_data[6] = data[2]; saved_data[7] = data[3]; saved_data[8] = data[4];
 
 				    	cr95write(saved_data, sizeof(saved_data));
 				    	if (cr95read(data, &len) == 0x80) {
 				    		printf("SEL2 Response =");
 				    		for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
 				    		printf("\n");
+				    		disp_len=2;
 				    	}
 				    } else {
 				    	printf("UID CL2 error\n");
+				    	disp_len=3;
 				    }
 				} else {
 					printf("SEL CL1 error\n");
+					disp_len=3;
 				}
     		} else {
     			cr95write(saved_data, sizeof(saved_data));
@@ -264,17 +270,38 @@ static void cr95_read(void)
     				for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
     				printf("\n");
     			}
-    			sprintf(uid, "%s %2X %2X %2X %2X\n", uid, saved_data[4], saved_data[5], saved_data[6], saved_data[7]);
+    			sprintf(uid, "%s%X%X%X%X", uid, saved_data[4], saved_data[5], saved_data[6], saved_data[7]);
+    			disp_len=1;
     		}
-
-
     		HAL_UART_Transmit(&huart2, (uint8_t*)(uid), strlen(uid), HAL_MAX_DELAY);
+    		printf("\n");
     	} else {
     		printf("UID CL1 error\n");
+    		disp_len=3;
     	}
 	} else {
 		printf("REQA error\n");
+		disp_len=3;
 	}
+	SSD1306_Clear();
+	SSD1306_GotoXY (50, 10);
+	SSD1306_Puts ("UID:", &Font_11x18, 1);
+	SSD1306_GotoXY (5, 30);
+	SSD1306_Puts (uid, &Font_7x10, 1);
+	if (disp_len == 1) {
+		SSD1306_GotoXY (5, 45);
+		SSD1306_Puts ("UID length: 4B", &Font_7x10, 1);
+			}
+	else if (disp_len == 2) {
+		SSD1306_GotoXY (5, 45);
+		SSD1306_Puts ("UID length: 7B", &Font_7x10, 1);
+	}
+	else if (disp_len == 3) {
+		SSD1306_Clear();
+		SSD1306_GotoXY (25, 19);
+		SSD1306_Puts ("ERROR", &Font_16x26, 1);
+	}
+	SSD1306_UpdateScreen(); // update screen
 }
 
 static void cr95_readtopaz(void)
@@ -283,7 +310,7 @@ static void cr95_readtopaz(void)
 	const uint8_t cmd_rid[]      =  { 0x04, 0x08, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA8 };
 
 	uint8_t data[16];
-	char uid[32];
+	char rid[32];
 	uint8_t len;
 
 	cr95write(cmd_reqtopaz, sizeof(cmd_reqtopaz));
@@ -292,7 +319,7 @@ static void cr95_readtopaz(void)
 		for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
 		printf("\n");
 
-		sprintf(uid, "UID =");
+		sprintf(rid, "UID =");
 
 		cr95write(cmd_rid, sizeof(cmd_rid));
 		if (cr95read(data, &len) == 0x80 ) {
@@ -301,7 +328,7 @@ static void cr95_readtopaz(void)
 			printf("\n");
 			printf("Header 1 = %2X", data[0]);
 			printf("Header 2 = %2X", data[1]);
-			sprintf(uid, "%s %2X %2X %2X %2X", uid, data[2], data[3], data[4], data[5]);
+			sprintf(rid, "%s %2X %2X %2X %2X", rid, data[2], data[3], data[4], data[5]);
 		}
 	}
 }
@@ -384,19 +411,6 @@ static void cr95_calibrate(void)
 	printf("CAL finished, DacDataRef=0x%02x\n", DacDataRef);
 }
 
-static void cr95_idle(uint8_t mode)
-{
-	uint8_t cmd_idle[] =  		{ 0x07, 0x0E, 0x0A, 0x21, 0x00, 0x79, 0x01, 0x18, 0x00, 0x20, 0x60, 0x60, 0x00, 0x00, 0x3F, 0x08 };
-
-	if (mode == 1) cmd_idle[2] = 0x08;   // Hibernate
-	else cmd_idle[2] = 0x0A;             // TagDetect
-
-	cmd_idle[12] = DacDataRef - 8;
-	cmd_idle[13] = DacDataRef + 8;
-	cr95write(cmd_idle, sizeof(cmd_idle));
-	printf("IDLE sent\n");
-}
-
 static void uart_process_command(char *cmd)
 {
     char *token;
@@ -408,7 +422,7 @@ static void uart_process_command(char *cmd)
 	const uint8_t cmd_idn[] =   { 0x01, 0x00 };
 
     if (strcasecmp(token, "HELLO") == 0) {
-        printf("Komunikace OK\n");
+        printf("Communication is working\n");
     }
     else if (strcasecmp(token, "ON") == 0) {
     	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
@@ -419,24 +433,53 @@ static void uart_process_command(char *cmd)
         nfc_rx_read_ptr = nfc_rx_write_ptr;
     	cr95_wakeup();
     	nfc_ready = true;
+    	SSD1306_GotoXY (45,10);
+    	SSD1306_Puts ("RFID", &Font_11x18, 1);
+    	SSD1306_GotoXY (30, 30);
+    	SSD1306_Puts ("SCANNER", &Font_11x18, 1);
+    	SSD1306_UpdateScreen(); // update screen
     }
     else if (strcasecmp(token, "OFF") == 0) {
     	nfc_ready = false;
         HAL_UART_AbortReceive(&huart1);
     	HAL_UART_DeInit(&huart1);
     	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+    	SSD1306_Clear();
     	printf("RFID OFF\n");
     }
     else if (strcasecmp(token, "ECHO") == 0) {
     	cr95write(cmd_echo, sizeof(cmd_echo));
     	uint8_t resp = cr95read(NULL, NULL);
     	printf("ECHO %s %02X\n", (resp == 0x55) ? "yes" : "no", resp);
+    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
+    	SSD1306_Clear();
+    	SSD1306_GotoXY (40,10);
+    	SSD1306_Puts ("ECHO", &Font_11x18, 1);
+    	SSD1306_GotoXY (25, 30);
+    	SSD1306_Puts ("COMMAND", &Font_11x18, 1);
+    	SSD1306_UpdateScreen(); // update screen
+    	HAL_Delay(5000);
+    	SSD1306_Clear();
+    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
     }
     else if (strcasecmp(token, "IDN") == 0) {
+    	char idn[28];
     	cr95write(cmd_idn, sizeof(cmd_idn));
     	if (cr95read(data, &len) == 0x00) {
     		printf("IDN =");
-    		for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
+    		for (uint8_t i = 0; i < len; i++)
+    			{
+    			idn[i]=data[i];
+    			printf(" %02X", data[i]);
+    			}
+    		SSD1306_Clear();
+    		SSD1306_GotoXY (50, 10);
+    		SSD1306_Puts ("IDN:", &Font_11x18, 1);
+    		SSD1306_GotoXY (20, 30);
+    		SSD1306_Puts (idn, &Font_7x10, 1);
+    		SSD1306_UpdateScreen(); // update screen
     		printf("\n");
     	} else {
     		printf("IDN error\n");
@@ -456,6 +499,16 @@ static void uart_process_command(char *cmd)
     }
     else if (strcasecmp(token, "READ") == 0) {
     	cr95_read();
+    	if (disp_len == 1) {
+    		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
+    		HAL_Delay(2000);
+    		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+    		}
+    	else {
+    		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
+    		HAL_Delay(2000);
+    		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+    	}
     }
     else if (strcasecmp(token, "READTOPAZ") == 0) {
         cr95_readtopaz();
@@ -478,18 +531,46 @@ static void uart_process_command(char *cmd)
     	printf("Code of wakeup is: %02X with response: %02X\n", data[0],resp);
     }
     else if (strcasecmp(token, "AUTO") == 0) {
+    	SSD1306_Clear();
+    	SSD1306_GotoXY (1,10);
+    	SSD1306_Puts ("Calibration", &Font_11x18, 1);
+    	SSD1306_GotoXY (15,30);
+    	SSD1306_Puts ("sequence", &Font_11x18, 1);
+    	SSD1306_UpdateScreen();
     	cr95_calibrate();
+    	SSD1306_Clear();
+    	SSD1306_GotoXY (45,10);
+    	SSD1306_Puts ("RFID", &Font_11x18, 1);
+    	SSD1306_GotoXY (30, 30);
+    	SSD1306_Puts ("SCANNER", &Font_11x18, 1);
+    	SSD1306_UpdateScreen();
     	do {
         	cr95_idle(0);
 
 			do {} while (nfc_rx_read_ptr == nfc_rx_write_ptr);
 			uint8_t resp = cr95read(data, &len);
+
 			if (resp == 0x00 && data[0] == 0x02) printf("WAKEUP by tag detect\n");
 			else printf("Error\n");
 			printf("Code of wakeup is:%02X\n", data[0]);
-        	cr95_init14();
+
+			cr95_init14();
         	cr95_read();
-        	HAL_Delay(2000);
+
+        	if (disp_len == 1) HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
+        	if (disp_len == 2) HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
+
+        	HAL_Delay(3000);
+
+        	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+        	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+
+        	SSD1306_Clear();
+        	SSD1306_GotoXY (45,10);
+        	SSD1306_Puts ("RFID", &Font_11x18, 1);
+        	SSD1306_GotoXY (30, 30);
+        	SSD1306_Puts ("SCANNER", &Font_11x18, 1);
+        	SSD1306_UpdateScreen();
     	} while (uart_rx_read_ptr == uart_rx_write_ptr);
     }
     else {
@@ -527,7 +608,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-HAL_Init();
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -545,8 +626,9 @@ HAL_Init();
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_USART1_UART_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-
+  SSD1306_Init ();
   HAL_UART_DeInit(&huart1);
   HAL_UART_Receive_DMA(&huart2, uart_rx_buf, RX_BUFFER_LEN);
 
@@ -556,7 +638,7 @@ HAL_Init();
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-#if 1
+#if 0
 	  while (uart_rx_read_ptr != uart_rx_write_ptr) {
 	      uint8_t b = uart_rx_buf[uart_rx_read_ptr];
 	      if (++uart_rx_read_ptr >= RX_BUFFER_LEN) uart_rx_read_ptr = 0; // increase read pointer
@@ -581,20 +663,9 @@ HAL_Init();
 #else
 	  printf_en = true;
 	  uart_process_command("on");
+	  HAL_Delay(5000);
 	  uart_process_command("echo");
-	  HAL_Delay(2000);
-
-
-	  do {
-		  cr95_init14();
-		  cr95_read();
-
-		  cr95_idle(1);
-		  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-		  HAL_Delay(500);
-		  cr95_wakeup(); cr95read(NULL, NULL);
-		  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-	  } while (1);
+	  uart_process_command("auto");
 
 
 #endif
@@ -616,7 +687,8 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
-  /** Initializes the CPU, AHB and APB busses clocks
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -629,7 +701,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /** Initializes the CPU, AHB and APB busses clocks
+  /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1;
@@ -641,12 +713,59 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_I2C1;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
+  PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x0000020B;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure Analogue filter
+  */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure Digital filter
+  */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
+
 }
 
 /**
@@ -751,9 +870,13 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, LD2_Pin|GPIO_PIN_8, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10|GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
@@ -770,6 +893,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB10 PB4 PB5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_4|GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PC7 */
   GPIO_InitStruct.Pin = GPIO_PIN_7;

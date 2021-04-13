@@ -1,0 +1,6 @@
+cr95hf.c:12:13:cr95_wakeup	16	static
+cr95hf.c:19:13:cr95_idle	40	static
+cr95hf.c:32:13:cr95_init14	32	static
+cr95hf.c:47:13:cr95_init15	24	static
+cr95hf.c:59:13:cr95_readtopaz	112	static
+cr95hf.c:90:13:cr95_calibrate	56	static
