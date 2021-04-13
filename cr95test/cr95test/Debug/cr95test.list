@@ -27,23 +27,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000028  00000000  00000000  0002008c  2**0
                   CONTENTS, READONLY
- 12 .debug_info   0000df45  00000000  00000000  000200b4  2**0
+ 12 .debug_info   0000f008  00000000  00000000  000200b4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_abbrev 000024a3  00000000  00000000  0002dff9  2**0
+ 13 .debug_abbrev 0000266f  00000000  00000000  0002f0bc  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_aranges 00000b78  00000000  00000000  000304a0  2**3
+ 14 .debug_aranges 00000b90  00000000  00000000  00031730  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_ranges 00000aa8  00000000  00000000  00031018  2**3
+ 15 .debug_macro  0001175f  00000000  00000000  000322c0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_macro  0000308a  00000000  00000000  00031ac0  2**0
+ 16 .debug_line   0000fdb9  00000000  00000000  00043a1f  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0000f375  00000000  00000000  00034b4a  2**0
+ 17 .debug_str    0005fae4  00000000  00000000  000537d8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    0005fac0  00000000  00000000  00043ebf  2**0
-                  CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000053  00000000  00000000  000a397f  2**0
+ 18 .comment      00000053  00000000  00000000  000b32bc  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  000034d0  00000000  00000000  000a39d4  2**2
+ 19 .debug_ranges 00000aa8  00000000  00000000  000b3310  2**3
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 20 .debug_frame  000034d0  00000000  00000000  000b3db8  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -283,7 +283,7 @@ int _write(int file, char const *buf, int n)
  8000270:	bd80      	pop	{r7, pc}
  8000272:	46c0      	nop			; (mov r8, r8)
  8000274:	20000018 	.word	0x20000018
- 8000278:	2000069c 	.word	0x2000069c
+ 8000278:	200006a0 	.word	0x200006a0
 
 0800027c <cr95write>:
 
@@ -310,7 +310,7 @@ void cr95write(const uint8_t *data, uint8_t length)
  800029e:	46bd      	mov	sp, r7
  80002a0:	b002      	add	sp, #8
  80002a2:	bd80      	pop	{r7, pc}
- 80002a4:	20000618 	.word	0x20000618
+ 80002a4:	2000061c 	.word	0x2000061c
 
 080002a8 <cr95read>:
 
@@ -519,7 +519,7 @@ uint8_t cr95read(uint8_t *data, uint8_t *length)
  8000408:	bd80      	pop	{r7, pc}
  800040a:	46c0      	nop			; (mov r8, r8)
  800040c:	2000012c 	.word	0x2000012c
- 8000410:	200005d4 	.word	0x200005d4
+ 8000410:	200005d8 	.word	0x200005d8
  8000414:	200000ec 	.word	0x200000ec
 
 08000418 <cr95_wakeup>:
@@ -619,6 +619,7 @@ static void cr95_idle(uint8_t mode)
  80004b4:	080068d8 	.word	0x080068d8
 
 080004b8 <cr95_init14>:
+
 
 static void cr95_init14(void)
 {
@@ -1290,7 +1291,7 @@ static void cr95_read(void)
  80009c4:	080069a0 	.word	0x080069a0
  80009c8:	080069ac 	.word	0x080069ac
  80009cc:	080069c0 	.word	0x080069c0
- 80009d0:	20000720 	.word	0x20000720
+ 80009d0:	20000544 	.word	0x20000544
  80009d4:	080069d0 	.word	0x080069d0
  80009d8:	080069e0 	.word	0x080069e0
 				}
@@ -1501,8 +1502,8 @@ static void cr95_read(void)
  8000b54:	08006990 	.word	0x08006990
  8000b58:	08006950 	.word	0x08006950
  8000b5c:	080069f0 	.word	0x080069f0
- 8000b60:	20000720 	.word	0x20000720
- 8000b64:	2000069c 	.word	0x2000069c
+ 8000b60:	20000544 	.word	0x20000544
+ 8000b64:	200006a0 	.word	0x200006a0
  8000b68:	080069fc 	.word	0x080069fc
  8000b6c:	08006a0c 	.word	0x08006a0c
  8000b70:	20000008 	.word	0x20000008
@@ -2587,9 +2588,9 @@ static void uart_process_command(char *cmd)
  8001384:	08006c14 	.word	0x08006c14
  8001388:	08006c30 	.word	0x08006c30
  800138c:	200000ec 	.word	0x200000ec
- 8001390:	20000618 	.word	0x20000618
+ 8001390:	2000061c 	.word	0x2000061c
  8001394:	08006c34 	.word	0x08006c34
- 8001398:	200005d4 	.word	0x200005d4
+ 8001398:	200005d8 	.word	0x200005d8
  800139c:	2000012c 	.word	0x2000012c
  80013a0:	2000012f 	.word	0x2000012f
  80013a4:	20000008 	.word	0x20000008
@@ -2613,7 +2614,7 @@ static void uart_process_command(char *cmd)
  80013ec:	08006c9c 	.word	0x08006c9c
  80013f0:	08006ca4 	.word	0x08006ca4
  80013f4:	08006cac 	.word	0x08006cac
- 80013f8:	20000720 	.word	0x20000720
+ 80013f8:	20000544 	.word	0x20000544
  80013fc:	08006cb4 	.word	0x08006cb4
  8001400:	08006cc0 	.word	0x08006cc0
  8001404:	08006ccc 	.word	0x08006ccc
@@ -2861,15 +2862,15 @@ static void uart_process_command(char *cmd)
  80015ec:	08006c3c 	.word	0x08006c3c
  80015f0:	08006c44 	.word	0x08006c44
  80015f4:	2000012c 	.word	0x2000012c
- 80015f8:	200005d4 	.word	0x200005d4
+ 80015f8:	200005d8 	.word	0x200005d8
  80015fc:	08006d2c 	.word	0x08006d2c
  8001600:	08006d44 	.word	0x08006d44
  8001604:	08006d4c 	.word	0x08006d4c
- 8001608:	20000720 	.word	0x20000720
+ 8001608:	20000544 	.word	0x20000544
  800160c:	48000400 	.word	0x48000400
  8001610:	00000bb8 	.word	0x00000bb8
  8001614:	200000e8 	.word	0x200000e8
- 8001618:	20000544 	.word	0x20000544
+ 8001618:	20000548 	.word	0x20000548
  800161c:	08006d64 	.word	0x08006d64
 
 08001620 <main>:
@@ -2950,9 +2951,9 @@ int main(void)
  800167a:	f7ff fcc7 	bl	800100c <uart_process_command>
 	  printf_en = true;
  800167e:	e7eb      	b.n	8001658 <main+0x38>
- 8001680:	20000618 	.word	0x20000618
+ 8001680:	2000061c 	.word	0x2000061c
  8001684:	200000a8 	.word	0x200000a8
- 8001688:	2000069c 	.word	0x2000069c
+ 8001688:	200006a0 	.word	0x200006a0
  800168c:	20000018 	.word	0x20000018
  8001690:	08006d78 	.word	0x08006d78
  8001694:	00001388 	.word	0x00001388
@@ -3190,7 +3191,7 @@ static void MX_I2C1_Init(void)
  80017d6:	46c0      	nop			; (mov r8, r8)
  80017d8:	46bd      	mov	sp, r7
  80017da:	bd80      	pop	{r7, pc}
- 80017dc:	20000588 	.word	0x20000588
+ 80017dc:	2000058c 	.word	0x2000058c
  80017e0:	40005400 	.word	0x40005400
  80017e4:	0000020b 	.word	0x0000020b
 
@@ -3269,7 +3270,7 @@ static void MX_USART1_UART_Init(void)
  800183e:	46bd      	mov	sp, r7
  8001840:	bd80      	pop	{r7, pc}
  8001842:	46c0      	nop			; (mov r8, r8)
- 8001844:	20000618 	.word	0x20000618
+ 8001844:	2000061c 	.word	0x2000061c
  8001848:	40013800 	.word	0x40013800
 
 0800184c <MX_USART2_UART_Init>:
@@ -3345,7 +3346,7 @@ static void MX_USART2_UART_Init(void)
  800189e:	46c0      	nop			; (mov r8, r8)
  80018a0:	46bd      	mov	sp, r7
  80018a2:	bd80      	pop	{r7, pc}
- 80018a4:	2000069c 	.word	0x2000069c
+ 80018a4:	200006a0 	.word	0x200006a0
  80018a8:	40004400 	.word	0x40004400
 
 080018ac <MX_DMA_Init>:
@@ -3868,7 +3869,7 @@ uint8_t SSD1306_Init(void) {
  8001bdc:	b002      	add	sp, #8
  8001bde:	bd80      	pop	{r7, pc}
  8001be0:	00004e20 	.word	0x00004e20
- 8001be4:	20000588 	.word	0x20000588
+ 8001be4:	2000058c 	.word	0x2000058c
  8001be8:	000009c4 	.word	0x000009c4
  8001bec:	20000530 	.word	0x20000530
 
@@ -4540,7 +4541,7 @@ HAL_I2C_Master_Transmit(&hi2c1, address, dt, count+1, 10);
  8002010:	fffffef6 	.word	0xfffffef6
  8002014:	fffffef4 	.word	0xfffffef4
  8002018:	fffffefc 	.word	0xfffffefc
- 800201c:	20000588 	.word	0x20000588
+ 800201c:	2000058c 	.word	0x2000058c
 
 08002020 <ssd1306_I2C_Write>:
 
@@ -4588,7 +4589,7 @@ void ssd1306_I2C_Write(uint8_t address, uint8_t reg, uint8_t data) {
  8002066:	46bd      	mov	sp, r7
  8002068:	b005      	add	sp, #20
  800206a:	bd90      	pop	{r4, r7, pc}
- 800206c:	20000588 	.word	0x20000588
+ 800206c:	2000058c 	.word	0x2000058c
 
 08002070 <HAL_MspInit>:
 /* USER CODE END 0 */
@@ -5025,10 +5026,10 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
  80022ee:	bd90      	pop	{r4, r7, pc}
  80022f0:	40013800 	.word	0x40013800
  80022f4:	40021000 	.word	0x40021000
- 80022f8:	200005d4 	.word	0x200005d4
+ 80022f8:	200005d8 	.word	0x200005d8
  80022fc:	40020030 	.word	0x40020030
  8002300:	40004400 	.word	0x40004400
- 8002304:	20000544 	.word	0x20000544
+ 8002304:	20000548 	.word	0x20000548
  8002308:	40020058 	.word	0x40020058
 
 0800230c <HAL_UART_MspDeInit>:
@@ -5242,7 +5243,7 @@ void DMA1_Channel2_3_IRQHandler(void)
  80023d2:	46bd      	mov	sp, r7
  80023d4:	bd80      	pop	{r7, pc}
  80023d6:	46c0      	nop			; (mov r8, r8)
- 80023d8:	200005d4 	.word	0x200005d4
+ 80023d8:	200005d8 	.word	0x200005d8
 
 080023dc <DMA1_Channel4_5_IRQHandler>:
 
@@ -5268,7 +5269,7 @@ void DMA1_Channel4_5_IRQHandler(void)
  80023ea:	46bd      	mov	sp, r7
  80023ec:	bd80      	pop	{r7, pc}
  80023ee:	46c0      	nop			; (mov r8, r8)
- 80023f0:	20000544 	.word	0x20000544
+ 80023f0:	20000548 	.word	0x20000548
 
 080023f4 <_getpid>:
 void initialise_monitor_handles()

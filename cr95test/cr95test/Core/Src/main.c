@@ -29,6 +29,7 @@
 #include "ssd1306.h"
 #include "fonts.h"
 #include "test.h"
+#include "cr95hf.h"
 
 /* USER CODE END Includes */
 
@@ -150,6 +151,7 @@ static void cr95_idle(uint8_t mode)
 	cr95write(cmd_idle, sizeof(cmd_idle));
 	printf("IDLE sent\n");
 }
+
 
 static void cr95_init14(void)
 {
