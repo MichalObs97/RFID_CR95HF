@@ -8,6 +8,8 @@
 #ifndef INC_CR95HF_H_
 #define INC_CR95HF_H_
 
+#include "stdint.h"
 
+static void cr95_init14(void);
 
 #endif /* INC_CR95HF_H_ */
