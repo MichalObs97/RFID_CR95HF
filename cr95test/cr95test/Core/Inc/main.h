@@ -32,6 +32,18 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "cr95hf.h"
+#include "main.h"
+#include "ssd1306.h"
+#include "fonts.h"
+#include "stm32f0xx_hal.h"
+#include "stm32f0xx_hal_uart.h"
+#include "stm32f0xx_hal_dma.h"
+#include "stm32f0xx_hal_gpio.h"
+#include "stdlib.h"
+#include "stdio.h"
+#include "stdbool.h"
+#include "string.h"
 
 /* USER CODE END Includes */
 

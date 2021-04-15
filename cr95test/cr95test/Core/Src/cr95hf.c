@@ -18,35 +18,35 @@
 #include "stdbool.h"
 #include "string.h"
 
- UART_HandleTypeDef huart1;
- UART_HandleTypeDef huart2;
- DMA_HandleTypeDef hdma_usart1_rx;
- DMA_HandleTypeDef hdma_usart2_rx;
+extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
+extern DMA_HandleTypeDef hdma_usart1_rx;
+extern DMA_HandleTypeDef hdma_usart2_rx;
 
-#define RX_BUFFER_LEN 64
+#define RX_BUFFER_LEN  64
 #define CMD_BUFFER_LEN 64
 
 #define NFC_TIMEOUT	1000
 
-//static uint8_t uart_rx_buf[RX_BUFFER_LEN];
-//static volatile uint16_t uart_rx_read_ptr = 0;
+//extern uint8_t uart_rx_buf[RX_BUFFER_LEN];
+volatile uint16_t uart_rx_read_ptr = 0;
 #define uart_rx_write_ptr (RX_BUFFER_LEN - hdma_usart2_rx.Instance->CNDTR)
 
-//static uint8_t nfc_rx_buf[RX_BUFFER_LEN];
-//static volatile uint16_t nfc_rx_read_ptr = 0;
+uint8_t nfc_rx_buf[RX_BUFFER_LEN];
+volatile uint16_t nfc_rx_read_ptr = 0;
 #define nfc_rx_write_ptr (RX_BUFFER_LEN - hdma_usart1_rx.Instance->CNDTR)
 
-//static bool nfc_ready = false;
-//static bool printf_en = true;
-static uint8_t DacDataRef;
+bool nfc_ready = false;
+//bool printf_en = true;
 uint8_t disp_len;
+static uint8_t DacDataRef;
 /*
 int _write(int file, char const *buf, int n)
 {
     if (printf_en) HAL_UART_Transmit(&huart2, (uint8_t*)(buf), n, HAL_MAX_DELAY);
     return n;
 }
-
+*/
 void cr95write(const uint8_t *data, uint8_t length)
 {
     HAL_UART_Transmit(&huart1, (uint8_t *)(data), length, HAL_MAX_DELAY);
@@ -81,7 +81,6 @@ uint8_t cr95read(uint8_t *data, uint8_t *length)
 
     return resp;
 }
-*/
 
 void cr95_wakeup(void)
 {
@@ -121,7 +120,7 @@ void cr95_init14(void)
 
 void cr95_init15(void)
 {
-	const uint8_t cmd_init1_15[] = { 0x02, 0x02, 0x01, 0x03 };
+	const uint8_t cmd_init1_15[] = { 0x02, 0x02, 0x01, 0x0D };
 	const uint8_t cmd_init2_15[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0xD0 };
 
 	cr95write(cmd_init1_15, sizeof(cmd_init1_15));
@@ -303,7 +302,7 @@ void cr95_calibrate(void)
 	DacDataRef = cmd_cal[13];
 	printf("CAL finished, DacDataRef=0x%02x\n", DacDataRef);
 }
-/*
+
 void uart_process_command(char *cmd)
 {
     char *token;
@@ -319,7 +318,6 @@ void uart_process_command(char *cmd)
     }
     else if (strcasecmp(token, "ON") == 0) {
     	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-        MX_USART1_UART_Init();
         HAL_UART_Receive_DMA(&huart1, nfc_rx_buf, RX_BUFFER_LEN);
     	HAL_Delay(5);
     	printf("RFID ON\n");
@@ -470,5 +468,30 @@ void uart_byte_available(uint8_t c)
         uart_process_command(data);
         cnt = 0;
     }
+}
+/*
+void manual_operation(void)
+{
+	while (uart_rx_read_ptr != uart_rx_write_ptr) {
+		      uint8_t b = uart_rx_buf[uart_rx_read_ptr];
+		      if (++uart_rx_read_ptr >= RX_BUFFER_LEN) uart_rx_read_ptr = 0; // increase read pointer
+
+		      uart_byte_available(b); // process every received byte with the RX state machine
+		  }
+
+		  if (nfc_ready && nfc_rx_read_ptr != nfc_rx_write_ptr) {
+			  uint8_t data[16];
+			  uint8_t len;
+			  uint8_t resp = cr95read(data, &len);
+
+			  if (resp != 0xFF) {
+				  printf("Async response, code = 0x%02x, len = %d, data =", resp, len);
+				  for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
+				  printf("\n");
+			  } else {
+				  printf("Async reponse, invalid (timeout)\n");
+			  }
+
+		  }
 }
 */

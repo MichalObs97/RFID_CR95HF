@@ -16,9 +16,9 @@
 
 //int _write(int file, char const *buf, int n);
 
-//void cr95write(const uint8_t *data, uint8_t length);
+void cr95write(const uint8_t *data, uint8_t length);
 
-//uint8_t cr95read(uint8_t *data, uint8_t *length);
+uint8_t cr95read(uint8_t *data, uint8_t *length);
 
 void cr95_wakeup(void);
 
@@ -34,8 +34,10 @@ void cr95_readtopaz(void);
 
 void cr95_calibrate(void);
 
-//void uart_process_command(char *cmd);
+void uart_process_command(char *cmd);
 
-//void uart_byte_available(uint8_t c);
+void uart_byte_available(uint8_t c);
+
+void manual_operation(void);
 
 #endif /* INC_CR95HF_H_ */
