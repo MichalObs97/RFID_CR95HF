@@ -13,8 +13,7 @@
 #include "stm32f0xx_hal.h"
 #include "stdlib.h"
 #include "string.h"
-
-//int _write(int file, char const *buf, int n);
+#include "main.h"
 
 void cr95write(const uint8_t *data, uint8_t length);
 
@@ -39,5 +38,7 @@ void uart_process_command(char *cmd);
 void uart_byte_available(uint8_t c);
 
 void manual_operation(void);
+
+void uart_init(void);
 
 #endif /* INC_CR95HF_H_ */

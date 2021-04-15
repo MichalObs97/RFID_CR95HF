@@ -28,7 +28,7 @@ extern DMA_HandleTypeDef hdma_usart2_rx;
 
 #define NFC_TIMEOUT	1000
 
-//extern uint8_t uart_rx_buf[RX_BUFFER_LEN];
+uint8_t uart_rx_buf[RX_BUFFER_LEN];
 volatile uint16_t uart_rx_read_ptr = 0;
 #define uart_rx_write_ptr (RX_BUFFER_LEN - hdma_usart2_rx.Instance->CNDTR)
 
@@ -37,16 +37,9 @@ volatile uint16_t nfc_rx_read_ptr = 0;
 #define nfc_rx_write_ptr (RX_BUFFER_LEN - hdma_usart1_rx.Instance->CNDTR)
 
 bool nfc_ready = false;
-//bool printf_en = true;
 uint8_t disp_len;
 static uint8_t DacDataRef;
-/*
-int _write(int file, char const *buf, int n)
-{
-    if (printf_en) HAL_UART_Transmit(&huart2, (uint8_t*)(buf), n, HAL_MAX_DELAY);
-    return n;
-}
-*/
+
 void cr95write(const uint8_t *data, uint8_t length)
 {
     HAL_UART_Transmit(&huart1, (uint8_t *)(data), length, HAL_MAX_DELAY);
@@ -344,7 +337,7 @@ void uart_process_command(char *cmd)
     	cr95write(cmd_echo, sizeof(cmd_echo));
     	uint8_t resp = cr95read(NULL, NULL);
     	printf("ECHO %s %02X\n", (resp == 0x55) ? "yes" : "no", resp);
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
+    	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
     	SSD1306_Clear();
     	SSD1306_GotoXY (40,10);
     	SSD1306_Puts ("ECHO", &Font_11x18, 1);
@@ -353,7 +346,7 @@ void uart_process_command(char *cmd)
     	SSD1306_UpdateScreen(); // update screen
     	HAL_Delay(1000);
     	SSD1306_Clear();
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
+    	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
     }
     else if (strcasecmp(token, "IDN") == 0) {
     	char idn[28];
@@ -469,21 +462,19 @@ void uart_byte_available(uint8_t c)
         cnt = 0;
     }
 }
-/*
+
+
 void manual_operation(void)
 {
 	while (uart_rx_read_ptr != uart_rx_write_ptr) {
 		      uint8_t b = uart_rx_buf[uart_rx_read_ptr];
 		      if (++uart_rx_read_ptr >= RX_BUFFER_LEN) uart_rx_read_ptr = 0; // increase read pointer
-
 		      uart_byte_available(b); // process every received byte with the RX state machine
 		  }
-
 		  if (nfc_ready && nfc_rx_read_ptr != nfc_rx_write_ptr) {
 			  uint8_t data[16];
 			  uint8_t len;
 			  uint8_t resp = cr95read(data, &len);
-
 			  if (resp != 0xFF) {
 				  printf("Async response, code = 0x%02x, len = %d, data =", resp, len);
 				  for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
@@ -491,7 +482,10 @@ void manual_operation(void)
 			  } else {
 				  printf("Async reponse, invalid (timeout)\n");
 			  }
-
 		  }
 }
-*/
+
+void uart_init(void)
+{
+	HAL_UART_Receive_DMA(&huart2, uart_rx_buf, RX_BUFFER_LEN);
+}

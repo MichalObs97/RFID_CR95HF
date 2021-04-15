@@ -57,21 +57,8 @@ DMA_HandleTypeDef hdma_usart2_rx;
 
 /* USER CODE BEGIN PV */
 
-#define RX_BUFFER_LEN  64
-#define CMD_BUFFER_LEN 64
-
-#define NFC_TIMEOUT	1000
-
-uint8_t uart_rx_buf[RX_BUFFER_LEN];
-//volatile uint16_t uart_rx_read_ptr = 0;
-//#define uart_rx_write_ptr (RX_BUFFER_LEN - hdma_usart2_rx.Instance->CNDTR)
-
-//uint8_t nfc_rx_buf[RX_BUFFER_LEN];
-//volatile uint16_t nfc_rx_read_ptr = 0;
-//#define nfc_rx_write_ptr (RX_BUFFER_LEN - hdma_usart1_rx.Instance->CNDTR)
-
-//bool nfc_ready = false;
 bool printf_en = true;
+
 //uint8_t disp_len;
 
 /* USER CODE END PV */
@@ -95,214 +82,6 @@ int _write(int file, char const *buf, int n)
     if (printf_en) HAL_UART_Transmit(&huart2, (uint8_t*)(buf), n, HAL_MAX_DELAY);
     return n;
 }
-/*
-void cr95write(const uint8_t *data, uint8_t length)
-{
-    HAL_UART_Transmit(&huart1, (uint8_t *)(data), length, HAL_MAX_DELAY);
-}
-
-uint8_t cr95read(uint8_t *data, uint8_t *length)
-{
-	uint32_t timeout = HAL_GetTick();
-
-	do
-	{
-		if (HAL_GetTick() - timeout > NFC_TIMEOUT) return 0xFF; // timeout
-	} while (nfc_rx_read_ptr == nfc_rx_write_ptr);
-	uint8_t resp = nfc_rx_buf[nfc_rx_read_ptr];
-    if (++nfc_rx_read_ptr >= RX_BUFFER_LEN) nfc_rx_read_ptr = 0; // increase read pointer
-
-    if (resp == 0x55) return resp;
-
-	do
-	{
-		if (HAL_GetTick() - timeout > NFC_TIMEOUT) return 0xFF; // timeout
-	} while (nfc_rx_read_ptr == nfc_rx_write_ptr);
-	uint8_t len = nfc_rx_buf[nfc_rx_read_ptr];
-    if (++nfc_rx_read_ptr >= RX_BUFFER_LEN) nfc_rx_read_ptr = 0; // increase read pointer
-
-    if (length) *length = len;
-    while (len--)
-    {
-    	do
-    	{
-    		if (HAL_GetTick() - timeout > NFC_TIMEOUT) return 0xFF; // timeout
-    	} while (nfc_rx_read_ptr == nfc_rx_write_ptr);
-    	if (data) *data++ = nfc_rx_buf[nfc_rx_read_ptr];
-        if (++nfc_rx_read_ptr >= RX_BUFFER_LEN) nfc_rx_read_ptr = 0; // increase read pointer
-    }
-
-    return resp;
-}
-
-static void uart_process_command(char *cmd)
-{
-    char *token;
-    token = strtok(cmd, " ");
-	uint8_t data[16];
-	uint8_t len;
-
-	const uint8_t cmd_echo[] =  { 0x55 };
-	const uint8_t cmd_idn[] =   { 0x01, 0x00 };
-
-    if (strcasecmp(token, "HELLO") == 0) {
-        printf("Communication is working\n");
-    }
-    else if (strcasecmp(token, "ON") == 0) {
-    	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-    	MX_USART1_UART_Init();
-        HAL_UART_Receive_DMA(&huart1, nfc_rx_buf, RX_BUFFER_LEN);
-    	HAL_Delay(5);
-    	printf("RFID ON\n");
-        nfc_rx_read_ptr = nfc_rx_write_ptr;
-    	cr95_wakeup();
-    	nfc_ready = true;
-    	SSD1306_GotoXY (45,10);
-    	SSD1306_Puts ("RFID", &Font_11x18, 1);
-    	SSD1306_GotoXY (30, 30);
-    	SSD1306_Puts ("SCANNER", &Font_11x18, 1);
-    	SSD1306_UpdateScreen(); // update screen
-    }
-    else if (strcasecmp(token, "OFF") == 0) {
-    	nfc_ready = false;
-        HAL_UART_AbortReceive(&huart1);
-    	HAL_UART_DeInit(&huart1);
-    	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-    	SSD1306_Clear();
-    	printf("RFID OFF\n");
-    }
-    else if (strcasecmp(token, "ECHO") == 0) {
-    	cr95write(cmd_echo, sizeof(cmd_echo));
-    	uint8_t resp = cr95read(NULL, NULL);
-    	printf("ECHO %s %02X\n", (resp == 0x55) ? "yes" : "no", resp);
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
-    	SSD1306_Clear();
-    	SSD1306_GotoXY (40,10);
-    	SSD1306_Puts ("ECHO", &Font_11x18, 1);
-    	SSD1306_GotoXY (25, 30);
-    	SSD1306_Puts ("COMMAND", &Font_11x18, 1);
-    	SSD1306_UpdateScreen(); // update screen
-    	HAL_Delay(250);
-    	SSD1306_Clear();
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
-    }
-    else if (strcasecmp(token, "IDN") == 0) {
-    	char idn[28];
-    	cr95write(cmd_idn, sizeof(cmd_idn));
-    	if (cr95read(data, &len) == 0x00) {
-    		printf("IDN =");
-    		for (uint8_t i = 0; i < len; i++)
-    			{
-    			idn[i]=data[i];
-    			printf(" %02X", data[i]);
-    			}
-    		SSD1306_Clear();
-    		SSD1306_GotoXY (50, 10);
-    		SSD1306_Puts ("IDN:", &Font_11x18, 1);
-    		SSD1306_GotoXY (20, 30);
-    		SSD1306_Puts (idn, &Font_7x10, 1);
-    		SSD1306_UpdateScreen(); // update screen
-    		printf("\n");
-    	} else {
-    		printf("IDN error\n");
-    	}
-    }
-    else if (strcasecmp(token, "INIT14") == 0) {
-    	cr95_init14();
-    }
-    else if (strcasecmp(token, "INIT15") == 0) {
-        cr95_init15();
-    }
-    else if (strcasecmp(token, "READ") == 0) {
-    	cr95_read();
-    	if (disp_len == 1) {
-    		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
-    		HAL_Delay(2000);
-    		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-    		}
-    	else {
-    		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
-    		HAL_Delay(2000);
-    		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
-    	}
-    }
-    else if (strcasecmp(token, "READTOPAZ") == 0) {
-        cr95_readtopaz();
-       }
-    else if (strcasecmp(token, "CALIBRATE") == 0) {
-    	cr95_calibrate();
-    }
-    else if (strcasecmp(token, "IDLE") == 0) {
-    	cr95_idle(1);
-    }
-    else if (strcasecmp(token, "WAKEUP") == 0) {
-    	cr95_wakeup();
-    	uint8_t resp = cr95read(data, &len);
-    	printf("Code of wakeup is: %02X with response: %02X\n", data[0],resp);
-    }
-    else if (strcasecmp(token, "AUTO") == 0) {
-    	SSD1306_Clear();
-    	SSD1306_GotoXY (1,10);
-    	SSD1306_Puts ("Calibration", &Font_11x18, 1);
-    	SSD1306_GotoXY (15,30);
-    	SSD1306_Puts ("sequence", &Font_11x18, 1);
-    	SSD1306_UpdateScreen();
-    	cr95_calibrate();
-    	SSD1306_Clear();
-    	SSD1306_GotoXY (45,10);
-    	SSD1306_Puts ("RFID", &Font_11x18, 1);
-    	SSD1306_GotoXY (30, 30);
-    	SSD1306_Puts ("SCANNER", &Font_11x18, 1);
-    	SSD1306_UpdateScreen();
-    	do {
-        	cr95_idle(0);
-
-			do {} while (nfc_rx_read_ptr == nfc_rx_write_ptr);
-			uint8_t resp = cr95read(data, &len);
-
-			if (resp == 0x00 && data[0] == 0x02) printf("WAKEUP by tag detect\n");
-			else printf("Error\n");
-			printf("Code of wakeup is:%02X\n", data[0]);
-
-			cr95_init14();
-        	cr95_read();
-
-        	if (disp_len == 1) HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
-        	if (disp_len == 2) HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
-
-        	HAL_Delay(3000);
-
-        	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-        	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
-
-        	SSD1306_Clear();
-        	SSD1306_GotoXY (45,10);
-        	SSD1306_Puts ("RFID", &Font_11x18, 1);
-        	SSD1306_GotoXY (30, 30);
-        	SSD1306_Puts ("SCANNER", &Font_11x18, 1);
-        	SSD1306_UpdateScreen();
-    	} while (uart_rx_read_ptr == uart_rx_write_ptr);
-    }
-    else {
-        printf("Unknown command\n");
-    }
-}
-
-static void uart_byte_available(uint8_t c)
-{
-    static uint16_t cnt;
-    static char data[CMD_BUFFER_LEN];
-
-    if (cnt < CMD_BUFFER_LEN) data[cnt++] = c;
-    if (c == '\n' || c == '\r') {
-        data[cnt - 1] = '\0';
-        uart_process_command(data);
-        cnt = 0;
-    }
-}
-*/
 
 /* USER CODE END 0 */
 
@@ -341,7 +120,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   SSD1306_Init ();
   HAL_UART_DeInit(&huart1);
-  HAL_UART_Receive_DMA(&huart2, uart_rx_buf, RX_BUFFER_LEN);
+  uart_init();
 
   /* USER CODE END 2 */
 
@@ -350,6 +129,7 @@ int main(void)
   while (1)
   {
 #if 0
+	  MX_USART1_UART_Init();
 	  manual_operation();
 #else
 	  printf_en = true;
