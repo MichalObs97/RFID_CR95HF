@@ -6,38 +6,40 @@
  */
 
 #include "cr95hf.h"
+#include "main.h"
 #include "ssd1306.h"
 #include "fonts.h"
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_hal_uart.h"
+#include "stm32f0xx_hal_dma.h"
+#include "stm32f0xx_hal_gpio.h"
 #include "stdlib.h"
 #include "stdio.h"
 #include "stdbool.h"
 #include "string.h"
 
-extern UART_HandleTypeDef huart1;
-extern UART_HandleTypeDef huart2;
-extern DMA_HandleTypeDef hdma_usart1_rx;
-extern DMA_HandleTypeDef hdma_usart2_rx;
+ UART_HandleTypeDef huart1;
+ UART_HandleTypeDef huart2;
+ DMA_HandleTypeDef hdma_usart1_rx;
+ DMA_HandleTypeDef hdma_usart2_rx;
 
 #define RX_BUFFER_LEN 64
 #define CMD_BUFFER_LEN 64
 
 #define NFC_TIMEOUT	1000
 
-static uint8_t uart_rx_buf[RX_BUFFER_LEN];
-static volatile uint16_t uart_rx_read_ptr = 0;
+//static uint8_t uart_rx_buf[RX_BUFFER_LEN];
+//static volatile uint16_t uart_rx_read_ptr = 0;
 #define uart_rx_write_ptr (RX_BUFFER_LEN - hdma_usart2_rx.Instance->CNDTR)
 
-static uint8_t nfc_rx_buf[RX_BUFFER_LEN];
-static volatile uint16_t nfc_rx_read_ptr = 0;
+//static uint8_t nfc_rx_buf[RX_BUFFER_LEN];
+//static volatile uint16_t nfc_rx_read_ptr = 0;
 #define nfc_rx_write_ptr (RX_BUFFER_LEN - hdma_usart1_rx.Instance->CNDTR)
 
-static bool nfc_ready = false;
-static bool printf_en = true;
+//static bool nfc_ready = false;
+//static bool printf_en = true;
 static uint8_t DacDataRef;
 uint8_t disp_len;
-
 /*
 int _write(int file, char const *buf, int n)
 {
@@ -79,15 +81,15 @@ uint8_t cr95read(uint8_t *data, uint8_t *length)
 
     return resp;
 }
-
-static void cr95_wakeup(void)
+*/
+void cr95_wakeup(void)
 {
 	const uint8_t wakeup = 0;
 	cr95write(&wakeup, 1);
 	printf("WAKEUP sent\n");
 }
 
-static void cr95_idle(uint8_t mode)
+void cr95_idle(uint8_t mode)
 {
 	uint8_t cmd_idle[] =  		{ 0x07, 0x0E, 0x0A, 0x21, 0x00, 0x79, 0x01, 0x18, 0x00, 0x20, 0x60, 0x60, 0x00, 0x00, 0x3F, 0x08 };
 
@@ -101,7 +103,7 @@ static void cr95_idle(uint8_t mode)
 }
 
 
-static void cr95_init14(void)
+void cr95_init14(void)
 {
 	const uint8_t cmd_init1[] = { 0x02, 0x02, 0x02, 0x00 };
 	const uint8_t cmd_init2[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0xD1 };
@@ -116,7 +118,7 @@ static void cr95_init14(void)
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
 
-static void cr95_init15(void)
+void cr95_init15(void)
 {
 	const uint8_t cmd_init1_15[] = { 0x02, 0x02, 0x01, 0x03 };
 	const uint8_t cmd_init2_15[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0xD0 };
@@ -127,7 +129,7 @@ static void cr95_init15(void)
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
 
-static void cr95_read(void)
+void cr95_read(void)
 {
 	const uint8_t cmd_reqa[] =  { 0x04, 0x02, 0x26, 0x07 };
 	const uint8_t cmd_acl1[] =  { 0x04, 0x03, 0x93, 0x20, 0x08 };
@@ -228,7 +230,7 @@ static void cr95_read(void)
 	SSD1306_UpdateScreen(); // update screen
 }
 
-static void cr95_readtopaz(void)
+void cr95_readtopaz(void)
 {
 	const uint8_t cmd_reqtopaz[] =  { 0x04, 0x02, 0x26, 0x07 };
 	const uint8_t cmd_rid[]      =  { 0x04, 0x08, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA8 };
@@ -257,7 +259,7 @@ static void cr95_readtopaz(void)
 	}
 }
 
-static void cr95_calibrate(void)
+void cr95_calibrate(void)
 {
 	uint8_t cmd_cal[] =  	    { 0x07, 0x0E, 0x03, 0xA1, 0x00, 0xF8, 0x01, 0x18, 0x00, 0x20, 0x60, 0x60, 0x00, 0x00, 0x3F, 0x01 };
 
@@ -300,8 +302,8 @@ static void cr95_calibrate(void)
 	DacDataRef = cmd_cal[13];
 	printf("CAL finished, DacDataRef=0x%02x\n", DacDataRef);
 }
-
-static void uart_process_command(char *cmd)
+/*
+void uart_process_command(char *cmd)
 {
     char *token;
     token = strtok(cmd, " ");
@@ -316,7 +318,7 @@ static void uart_process_command(char *cmd)
     }
     else if (strcasecmp(token, "ON") == 0) {
     	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-    	MX_USART1_UART_Init();
+        MX_USART1_UART_Init();
         HAL_UART_Receive_DMA(&huart1, nfc_rx_buf, RX_BUFFER_LEN);
     	HAL_Delay(5);
     	printf("RFID ON\n");
@@ -350,7 +352,7 @@ static void uart_process_command(char *cmd)
     	SSD1306_GotoXY (25, 30);
     	SSD1306_Puts ("COMMAND", &Font_11x18, 1);
     	SSD1306_UpdateScreen(); // update screen
-    	HAL_Delay(5000);
+    	HAL_Delay(1000);
     	SSD1306_Clear();
     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
     }
@@ -456,8 +458,7 @@ static void uart_process_command(char *cmd)
     }
 }
 
-
-static void uart_byte_available(uint8_t c)
+void uart_byte_available(uint8_t c)
 {
     static uint16_t cnt;
     static char data[CMD_BUFFER_LEN];

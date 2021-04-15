@@ -54,6 +54,8 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+void cr95write(const uint8_t *data, uint8_t length);
+uint8_t cr95read(uint8_t *data, uint8_t *length);
 
 /* USER CODE END EFP */
 
