@@ -82,6 +82,7 @@ uint8_t cr95read(uint8_t *data, uint8_t *length)
     return resp;
 }
 */
+
 void cr95_wakeup(void)
 {
 	const uint8_t wakeup = 0;
