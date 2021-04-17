@@ -231,7 +231,7 @@ static void cr95_read(void)
 		SSD1306_GotoXY (25, 19);
 		SSD1306_Puts ("ERROR", &Font_16x26, 1);
 	}
-	SSD1306_UpdateScreen(); // update screen
+	SSD1306_UpdateScreen();
 }
 
 static void cr95_read15(void)
@@ -249,6 +249,7 @@ static void cr95_read15(void)
 		printf("UID = ");
 		for (uint8_t i = 0; i < sizeof(saved_data); i++) printf(" %02X", saved_data[i]);
 		printf("\n");
+
 	} else {
 		printf("Reading error\n");
 	}
@@ -341,16 +342,16 @@ static void uart_process_command(char *cmd)
     	cr95write(cmd_echo, sizeof(cmd_echo));
     	uint8_t resp = cr95read(NULL, NULL);
     	printf("ECHO %s %02X\n", (resp == 0x55) ? "yes" : "no", resp);
-    	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
+    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
     	SSD1306_Clear();
     	SSD1306_GotoXY (40,10);
     	SSD1306_Puts ("ECHO", &Font_11x18, 1);
     	SSD1306_GotoXY (25, 30);
     	SSD1306_Puts ("COMMAND", &Font_11x18, 1);
-    	SSD1306_UpdateScreen(); // update screen
+    	SSD1306_UpdateScreen();
     	HAL_Delay(1000);
     	SSD1306_Clear();
-    	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
+    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
     }
     else if (strcasecmp(token, "IDN") == 0) {
     	char idn[28];
@@ -367,7 +368,7 @@ static void uart_process_command(char *cmd)
     		SSD1306_Puts ("IDN:", &Font_11x18, 1);
     		SSD1306_GotoXY (20, 30);
     		SSD1306_Puts (idn, &Font_7x10, 1);
-    		SSD1306_UpdateScreen(); // update screen
+    		SSD1306_UpdateScreen();
     		printf("\n");
     	} else {
     		printf("IDN error\n");
@@ -471,8 +472,8 @@ void manual_operation(void)
 {
 	while (uart_rx_read_ptr != uart_rx_write_ptr) {
 		      uint8_t b = uart_rx_buf[uart_rx_read_ptr];
-		      if (++uart_rx_read_ptr >= RX_BUFFER_LEN) uart_rx_read_ptr = 0; // increase read pointer
-		      uart_byte_available(b); // process every received byte with the RX state machine
+		      if (++uart_rx_read_ptr >= RX_BUFFER_LEN) uart_rx_read_ptr = 0;
+		      uart_byte_available(b);
 		  }
 		  if (nfc_ready && nfc_rx_read_ptr != nfc_rx_write_ptr) {
 			  uint8_t data[16];
