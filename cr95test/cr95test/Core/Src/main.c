@@ -26,10 +26,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include "cr95hf.h"
 #include "ssd1306.h"
 #include "fonts.h"
 #include "test.h"
-#include "cr95hf.h"
+
 
 /* USER CODE END Includes */
 
@@ -57,8 +58,6 @@ DMA_HandleTypeDef hdma_usart2_rx;
 
 /* USER CODE BEGIN PV */
 
-bool printf_en = true;
-
 //uint8_t disp_len;
 
 /* USER CODE END PV */
@@ -77,10 +76,9 @@ static void MX_I2C1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-int _write(int file, char const *buf, int n)
+void nfc_init(void)
 {
-    if (printf_en) HAL_UART_Transmit(&huart2, (uint8_t*)(buf), n, HAL_MAX_DELAY);
-    return n;
+	MX_USART1_UART_Init();
 }
 
 /* USER CODE END 0 */
@@ -128,17 +126,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-#if 0
-	  MX_USART1_UART_Init();
+#if 1
 	  manual_operation();
 #else
-	  printf_en = true;
-	  MX_USART1_UART_Init();
-	  uart_process_command("on");
-	  HAL_Delay(5000);
-	  uart_process_command("echo");
-	  uart_process_command("auto");
-
+	  automatic_operation();
 
 #endif
 

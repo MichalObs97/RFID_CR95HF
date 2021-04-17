@@ -15,30 +15,34 @@
 #include "string.h"
 #include "main.h"
 
-void cr95write(const uint8_t *data, uint8_t length);
+void uart_init(void);
 
-uint8_t cr95read(uint8_t *data, uint8_t *length);
+int _write(int file, char const *buf, int n);
 
-void cr95_wakeup(void);
+//static void cr95write(const uint8_t *data, uint8_t length);
 
-void cr95_idle(uint8_t mode);
+//static uint8_t cr95read(uint8_t *data, uint8_t *length);
 
-void cr95_init14(void);
+//static void cr95_wakeup(void);
 
-void cr95_init15(void);
+//static void cr95_idle(uint8_t mode);
 
-void cr95_read(void);
+//static void cr95_init14(void);
 
-void cr95_readtopaz(void);
+//static void cr95_init15(void);
 
-void cr95_calibrate(void);
+//static void cr95_read(void);
 
-void uart_process_command(char *cmd);
+//static void cr95_readtopaz(void);
 
-void uart_byte_available(uint8_t c);
+//static void cr95_calibrate(void);
+
+//static void uart_process_command(char *cmd);
+
+//static void uart_byte_available(uint8_t c);
 
 void manual_operation(void);
 
-void uart_init(void);
+void automatic_operation(void);
 
 #endif /* INC_CR95HF_H_ */

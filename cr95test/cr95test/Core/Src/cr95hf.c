@@ -5,7 +5,6 @@
  *      Author: MichalObs97
  */
 
-#include "cr95hf.h"
 #include "main.h"
 #include "ssd1306.h"
 #include "fonts.h"
@@ -17,6 +16,7 @@
 #include "stdio.h"
 #include "stdbool.h"
 #include "string.h"
+#include "cr95hf.h"
 
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
@@ -25,7 +25,6 @@ extern DMA_HandleTypeDef hdma_usart2_rx;
 
 #define RX_BUFFER_LEN  64
 #define CMD_BUFFER_LEN 64
-
 #define NFC_TIMEOUT	1000
 
 uint8_t uart_rx_buf[RX_BUFFER_LEN];
@@ -37,15 +36,27 @@ volatile uint16_t nfc_rx_read_ptr = 0;
 #define nfc_rx_write_ptr (RX_BUFFER_LEN - hdma_usart1_rx.Instance->CNDTR)
 
 bool nfc_ready = false;
+bool printf_en = true;
 uint8_t disp_len;
 static uint8_t DacDataRef;
 
-void cr95write(const uint8_t *data, uint8_t length)
+void uart_init(void)
+{
+	HAL_UART_Receive_DMA(&huart2, uart_rx_buf, RX_BUFFER_LEN);
+}
+
+int _write(int file, char const *buf, int n)
+{
+    if (printf_en) HAL_UART_Transmit(&huart2, (uint8_t*)(buf), n, HAL_MAX_DELAY);
+    return n;
+}
+
+static void cr95write(const uint8_t *data, uint8_t length)
 {
     HAL_UART_Transmit(&huart1, (uint8_t *)(data), length, HAL_MAX_DELAY);
 }
 
-uint8_t cr95read(uint8_t *data, uint8_t *length)
+static uint8_t cr95read(uint8_t *data, uint8_t *length)
 {
 	uint32_t timeout = HAL_GetTick();
 
@@ -75,14 +86,14 @@ uint8_t cr95read(uint8_t *data, uint8_t *length)
     return resp;
 }
 
-void cr95_wakeup(void)
+static void cr95_wakeup(void)
 {
 	const uint8_t wakeup = 0;
 	cr95write(&wakeup, 1);
 	printf("WAKEUP sent\n");
 }
 
-void cr95_idle(uint8_t mode)
+static void cr95_idle(uint8_t mode)
 {
 	uint8_t cmd_idle[] =  		{ 0x07, 0x0E, 0x0A, 0x21, 0x00, 0x79, 0x01, 0x18, 0x00, 0x20, 0x60, 0x60, 0x00, 0x00, 0x3F, 0x08 };
 
@@ -96,7 +107,7 @@ void cr95_idle(uint8_t mode)
 }
 
 
-void cr95_init14(void)
+static void cr95_init14(void)
 {
 	const uint8_t cmd_init1[] = { 0x02, 0x02, 0x02, 0x00 };
 	const uint8_t cmd_init2[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0xD1 };
@@ -111,10 +122,10 @@ void cr95_init14(void)
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
 
-void cr95_init15(void)
+static void cr95_init15(void)
 {
-	const uint8_t cmd_init1_15[] = { 0x02, 0x02, 0x01, 0x0D };
-	const uint8_t cmd_init2_15[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0xD0 };
+	const uint8_t cmd_init1_15[] = { 0x02, 0x02, 0x01, 0x05 };
+	const uint8_t cmd_init2_15[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0x50 };
 
 	cr95write(cmd_init1_15, sizeof(cmd_init1_15));
 	printf("Initiation of 15 %s", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
@@ -122,7 +133,7 @@ void cr95_init15(void)
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
 
-void cr95_read(void)
+static void cr95_read(void)
 {
 	const uint8_t cmd_reqa[] =  { 0x04, 0x02, 0x26, 0x07 };
 	const uint8_t cmd_acl1[] =  { 0x04, 0x03, 0x93, 0x20, 0x08 };
@@ -223,36 +234,28 @@ void cr95_read(void)
 	SSD1306_UpdateScreen(); // update screen
 }
 
-void cr95_readtopaz(void)
+static void cr95_read15(void)
 {
-	const uint8_t cmd_reqtopaz[] =  { 0x04, 0x02, 0x26, 0x07 };
-	const uint8_t cmd_rid[]      =  { 0x04, 0x08, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA8 };
+	const uint8_t cmd_req15[] =  { 0x04, 0x03, 0x26, 0x01, 0x00 };
 
 	uint8_t data[16];
-	char rid[32];
 	uint8_t len;
+	uint8_t saved_data[8];
 
-	cr95write(cmd_reqtopaz, sizeof(cmd_reqtopaz));
+	cr95write(cmd_req15, sizeof(cmd_req15));
 	if (cr95read(data, &len) == 0x80) {
-		printf("ATQA =");
-		for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
+		saved_data[0]=data[9]; saved_data[1]=data[8]; saved_data[2]=data[7];; saved_data[3]=data[6];
+		saved_data[4]=data[5]; saved_data[5]=data[4]; saved_data[6]=data[3]; saved_data[7]=data[2];
+		printf("UID = ");
+		for (uint8_t i = 0; i < sizeof(saved_data); i++) printf(" %02X", saved_data[i]);
 		printf("\n");
-
-		sprintf(rid, "UID =");
-
-		cr95write(cmd_rid, sizeof(cmd_rid));
-		if (cr95read(data, &len) == 0x80 ) {
-			printf("RID =");
-			for (uint8_t i = 0; i < len; i++) printf(" %02X", data[i]);
-			printf("\n");
-			printf("Header 1 = %2X", data[0]);
-			printf("Header 2 = %2X", data[1]);
-			sprintf(rid, "%s %2X %2X %2X %2X", rid, data[2], data[3], data[4], data[5]);
-		}
+	} else {
+		printf("Reading error\n");
 	}
+
 }
 
-void cr95_calibrate(void)
+static void cr95_calibrate(void)
 {
 	uint8_t cmd_cal[] =  	    { 0x07, 0x0E, 0x03, 0xA1, 0x00, 0xF8, 0x01, 0x18, 0x00, 0x20, 0x60, 0x60, 0x00, 0x00, 0x3F, 0x01 };
 
@@ -296,7 +299,7 @@ void cr95_calibrate(void)
 	printf("CAL finished, DacDataRef=0x%02x\n", DacDataRef);
 }
 
-void uart_process_command(char *cmd)
+static void uart_process_command(char *cmd)
 {
     char *token;
     token = strtok(cmd, " ");
@@ -310,6 +313,7 @@ void uart_process_command(char *cmd)
         printf("Communication is working\n");
     }
     else if (strcasecmp(token, "ON") == 0) {
+    	nfc_init();
     	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
         HAL_UART_Receive_DMA(&huart1, nfc_rx_buf, RX_BUFFER_LEN);
     	HAL_Delay(5);
@@ -388,8 +392,8 @@ void uart_process_command(char *cmd)
     		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
     	}
     }
-    else if (strcasecmp(token, "READTOPAZ") == 0) {
-        cr95_readtopaz();
+    else if (strcasecmp(token, "READ15") == 0) {
+        cr95_read15();
        }
     else if (strcasecmp(token, "CALIBRATE") == 0) {
     	cr95_calibrate();
@@ -450,7 +454,7 @@ void uart_process_command(char *cmd)
     }
 }
 
-void uart_byte_available(uint8_t c)
+static void uart_byte_available(uint8_t c)
 {
     static uint16_t cnt;
     static char data[CMD_BUFFER_LEN];
@@ -462,7 +466,6 @@ void uart_byte_available(uint8_t c)
         cnt = 0;
     }
 }
-
 
 void manual_operation(void)
 {
@@ -485,7 +488,12 @@ void manual_operation(void)
 		  }
 }
 
-void uart_init(void)
+void automatic_operation(void)
 {
-	HAL_UART_Receive_DMA(&huart2, uart_rx_buf, RX_BUFFER_LEN);
+	printf_en = true;
+	uart_process_command("on");
+	HAL_Delay(5000);
+	uart_process_command("echo");
+	uart_process_command("auto");
 }
+
