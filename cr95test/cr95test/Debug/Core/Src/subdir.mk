@@ -13,8 +13,7 @@ C_SRCS += \
 ../Core/Src/stm32f0xx_it.c \
 ../Core/Src/syscalls.c \
 ../Core/Src/sysmem.c \
-../Core/Src/system_stm32f0xx.c \
-../Core/Src/test.c 
+../Core/Src/system_stm32f0xx.c 
 
 OBJS += \
 ./Core/Src/cr95hf.o \
@@ -25,8 +24,7 @@ OBJS += \
 ./Core/Src/stm32f0xx_it.o \
 ./Core/Src/syscalls.o \
 ./Core/Src/sysmem.o \
-./Core/Src/system_stm32f0xx.o \
-./Core/Src/test.o 
+./Core/Src/system_stm32f0xx.o 
 
 C_DEPS += \
 ./Core/Src/cr95hf.d \
@@ -37,8 +35,7 @@ C_DEPS += \
 ./Core/Src/stm32f0xx_it.d \
 ./Core/Src/syscalls.d \
 ./Core/Src/sysmem.d \
-./Core/Src/system_stm32f0xx.d \
-./Core/Src/test.d 
+./Core/Src/system_stm32f0xx.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -60,6 +57,4 @@ Core/Src/sysmem.o: ../Core/Src/sysmem.c Core/Src/subdir.mk
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m0 -std=gnu11 -g3 -DUSE_HAL_DRIVER -DSTM32F030x8 -DDEBUG -c -I../Drivers/STM32F0xx_HAL_Driver/Inc -I../Drivers/CMSIS/Include -I../Core/Inc -I../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I"D:/School/DIPLOMOVA PRACA/cr95test/cr95test/Core/Inc" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/sysmem.d" -MT"$@" --specs=nano.specs -mfloat-abi=soft -mthumb -o "$@"
 Core/Src/system_stm32f0xx.o: ../Core/Src/system_stm32f0xx.c Core/Src/subdir.mk
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m0 -std=gnu11 -g3 -DUSE_HAL_DRIVER -DSTM32F030x8 -DDEBUG -c -I../Drivers/STM32F0xx_HAL_Driver/Inc -I../Drivers/CMSIS/Include -I../Core/Inc -I../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I"D:/School/DIPLOMOVA PRACA/cr95test/cr95test/Core/Inc" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/system_stm32f0xx.d" -MT"$@" --specs=nano.specs -mfloat-abi=soft -mthumb -o "$@"
-Core/Src/test.o: ../Core/Src/test.c Core/Src/subdir.mk
-	arm-none-eabi-gcc "$<" -mcpu=cortex-m0 -std=gnu11 -g3 -DUSE_HAL_DRIVER -DSTM32F030x8 -DDEBUG -c -I../Drivers/STM32F0xx_HAL_Driver/Inc -I../Drivers/CMSIS/Include -I../Core/Inc -I../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I"D:/School/DIPLOMOVA PRACA/cr95test/cr95test/Core/Inc" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/test.d" -MT"$@" --specs=nano.specs -mfloat-abi=soft -mthumb -o "$@"
 

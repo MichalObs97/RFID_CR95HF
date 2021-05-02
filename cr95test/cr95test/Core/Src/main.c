@@ -29,7 +29,6 @@
 #include "cr95hf.h"
 #include "ssd1306.h"
 #include "fonts.h"
-#include "test.h"
 
 
 /* USER CODE END Includes */

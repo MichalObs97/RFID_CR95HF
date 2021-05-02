@@ -154,13 +154,6 @@ void SSD1306_DrawBitmap(int16_t x, int16_t y, const unsigned char* bitmap, int16
     }
 }
 
-
-
-
-
-
-
-
 uint8_t SSD1306_Init(void) {
 
 	/* Init I2C */

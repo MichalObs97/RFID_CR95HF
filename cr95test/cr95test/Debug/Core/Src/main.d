@@ -28,7 +28,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h \
  ../Core/Inc/cr95hf.h ../Core/Inc/ssd1306.h ../Core/Inc/fonts.h \
  ../Core/Inc/main.h ../Core/Inc/cr95hf.h ../Core/Inc/ssd1306.h \
- ../Core/Inc/fonts.h ../Core/Inc/test.h
+ ../Core/Inc/fonts.h
 
 ../Core/Inc/main.h:
 
@@ -99,5 +99,3 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/ssd1306.h:
 
 ../Core/Inc/fonts.h:
-
-../Core/Inc/test.h:

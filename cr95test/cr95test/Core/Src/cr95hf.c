@@ -249,9 +249,19 @@ static void cr95_read15(void)
 		printf("UID = ");
 		for (uint8_t i = 0; i < sizeof(saved_data); i++) printf(" %02X", saved_data[i]);
 		printf("\n");
+		disp_len=1;
+		SSD1306_Clear();
+		SSD1306_GotoXY (30,20);
+		SSD1306_Puts ("READ", &Font_16x26, 1);
+		SSD1306_UpdateScreen();
 
 	} else {
 		printf("Reading error\n");
+		disp_len=2;
+		SSD1306_Clear();
+		SSD1306_GotoXY (25, 19);
+		SSD1306_Puts ("ERROR", &Font_16x26, 1);
+		SSD1306_UpdateScreen();
 	}
 
 }
@@ -263,11 +273,11 @@ static void cr95_calibrate(void)
 	uint8_t data[16];
 	uint8_t len;
 
-	cmd_cal[13] = 0x00;
+	cmd_cal[13] = 0x00; //forces lowest
 	cr95write(cmd_cal, sizeof(cmd_cal));
 	printf("CAL #0 0x%02x %c, result 0x%02x\n", cmd_cal[13], (cr95read(data, &len) == 0x00) ? 'y' : 'n', data[0]);
 
-	cmd_cal[13] = 0xFC;
+	cmd_cal[13] = 0xFC; //
 	cr95write(cmd_cal, sizeof(cmd_cal));
 	printf("CAL #1 0x%02x %c, result 0x%02x\n", cmd_cal[13], (cr95read(data, &len) == 0x00) ? 'y' : 'n', data[0]);
 
@@ -342,7 +352,7 @@ static void uart_process_command(char *cmd)
     	cr95write(cmd_echo, sizeof(cmd_echo));
     	uint8_t resp = cr95read(NULL, NULL);
     	printf("ECHO %s %02X\n", (resp == 0x55) ? "yes" : "no", resp);
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
+    	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
     	SSD1306_Clear();
     	SSD1306_GotoXY (40,10);
     	SSD1306_Puts ("ECHO", &Font_11x18, 1);
@@ -351,7 +361,7 @@ static void uart_process_command(char *cmd)
     	SSD1306_UpdateScreen();
     	HAL_Delay(1000);
     	SSD1306_Clear();
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
+    	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
     }
     else if (strcasecmp(token, "IDN") == 0) {
     	char idn[28];
