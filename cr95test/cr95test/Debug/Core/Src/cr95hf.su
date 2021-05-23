@@ -10,6 +10,6 @@ cr95hf.c:136:13:cr95_read	144	static
 cr95hf.c:237:13:cr95_read15	56	static
 cr95hf.c:269:13:cr95_calibrate	56	static
 cr95hf.c:313:13:uart_process_command	96	static
-cr95hf.c:468:13:uart_byte_available	16	static
-cr95hf.c:481:6:manual_operation	40	static
-cr95hf.c:502:6:automatic_operation	8	static
+cr95hf.c:489:13:uart_byte_available	16	static
+cr95hf.c:502:6:manual_operation	40	static
+cr95hf.c:523:6:automatic_operation	8	static

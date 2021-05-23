@@ -40,7 +40,7 @@ bool printf_en = true;
 uint8_t disp_len;
 static uint8_t DacDataRef;
 
-void uart_init(void)
+void uart_init(void)     // Initializations of peripherials
 {
 	HAL_UART_Receive_DMA(&huart2, uart_rx_buf, RX_BUFFER_LEN);
 }
@@ -56,7 +56,7 @@ static void cr95write(const uint8_t *data, uint8_t length)
     HAL_UART_Transmit(&huart1, (uint8_t *)(data), length, HAL_MAX_DELAY);
 }
 
-static uint8_t cr95read(uint8_t *data, uint8_t *length)
+static uint8_t cr95read(uint8_t *data, uint8_t *length)     // Reading tag information
 {
 	uint32_t timeout = HAL_GetTick();
 
@@ -86,14 +86,14 @@ static uint8_t cr95read(uint8_t *data, uint8_t *length)
     return resp;
 }
 
-static void cr95_wakeup(void)
+static void cr95_wakeup(void)    // Wake-up
 {
 	const uint8_t wakeup = 0;
 	cr95write(&wakeup, 1);
 	printf("WAKEUP sent\n");
 }
 
-static void cr95_idle(uint8_t mode)
+static void cr95_idle(uint8_t mode)    // Idle mode
 {
 	uint8_t cmd_idle[] =  		{ 0x07, 0x0E, 0x0A, 0x21, 0x00, 0x79, 0x01, 0x18, 0x00, 0x20, 0x60, 0x60, 0x00, 0x00, 0x3F, 0x08 };
 
@@ -107,7 +107,7 @@ static void cr95_idle(uint8_t mode)
 }
 
 
-static void cr95_init14(void)
+static void cr95_init14(void)     // Initializations of standards
 {
 	const uint8_t cmd_init1[] = { 0x02, 0x02, 0x02, 0x00 };
 	const uint8_t cmd_init2[] = { 0x09, 0x04, 0x68, 0x01, 0x01, 0xD1 };
@@ -133,7 +133,7 @@ static void cr95_init15(void)
 	printf(" %s\n", (cr95read(NULL, NULL) == 0x00) ? "yes" : "no");
 }
 
-static void cr95_read(void)
+static void cr95_read(void)   // Reading of the 14443A tag UID
 {
 	const uint8_t cmd_reqa[] =  { 0x04, 0x02, 0x26, 0x07 };
 	const uint8_t cmd_acl1[] =  { 0x04, 0x03, 0x93, 0x20, 0x08 };
@@ -213,6 +213,7 @@ static void cr95_read(void)
 		printf("REQA error\n");
 		disp_len=3;
 	}
+	// operation of display
 	SSD1306_Clear();
 	SSD1306_GotoXY (50, 10);
 	SSD1306_Puts ("UID:", &Font_11x18, 1);
@@ -234,7 +235,7 @@ static void cr95_read(void)
 	SSD1306_UpdateScreen();
 }
 
-static void cr95_read15(void)
+static void cr95_read15(void)     // Reading of the 15693 tag UID
 {
 	const uint8_t cmd_req15[] =  { 0x04, 0x03, 0x26, 0x01, 0x00 };
 
@@ -266,7 +267,7 @@ static void cr95_read15(void)
 
 }
 
-static void cr95_calibrate(void)
+static void cr95_calibrate(void)    // Calibration procedure
 {
 	uint8_t cmd_cal[] =  	    { 0x07, 0x0E, 0x03, 0xA1, 0x00, 0xF8, 0x01, 0x18, 0x00, 0x20, 0x60, 0x60, 0x00, 0x00, 0x3F, 0x01 };
 
@@ -310,7 +311,7 @@ static void cr95_calibrate(void)
 	printf("CAL finished, DacDataRef=0x%02x\n", DacDataRef);
 }
 
-static void uart_process_command(char *cmd)
+static void uart_process_command(char *cmd)   // UART commands
 {
     char *token;
     token = strtok(cmd, " ");
@@ -325,24 +326,38 @@ static void uart_process_command(char *cmd)
     }
     else if (strcasecmp(token, "ON") == 0) {
     	nfc_init();
-    	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
         HAL_UART_Receive_DMA(&huart1, nfc_rx_buf, RX_BUFFER_LEN);
     	HAL_Delay(5);
     	printf("RFID ON\n");
         nfc_rx_read_ptr = nfc_rx_write_ptr;
     	cr95_wakeup();
     	nfc_ready = true;
-    	SSD1306_GotoXY (45,10);
-    	SSD1306_Puts ("RFID", &Font_11x18, 1);
-    	SSD1306_GotoXY (30, 30);
-    	SSD1306_Puts ("SCANNER", &Font_11x18, 1);
-    	SSD1306_UpdateScreen(); // update screen
+    	SSD1306_Clear();
+    	SSD1306_GotoXY (32,10);
+    	SSD1306_Puts ("Manual", &Font_11x18, 1);
+    	SSD1306_GotoXY (12, 30);
+    	SSD1306_Puts ("Operation", &Font_11x18, 1);
+    	SSD1306_UpdateScreen();
     }
+    else if (strcasecmp(token, "ONAUTO") == 0) {
+        nfc_init();
+        HAL_UART_Receive_DMA(&huart1, nfc_rx_buf, RX_BUFFER_LEN);
+        HAL_Delay(5);
+        printf("RFID ON\n");
+        nfc_rx_read_ptr = nfc_rx_write_ptr;
+        cr95_wakeup();
+        nfc_ready = true;
+        SSD1306_Clear();
+        SSD1306_GotoXY (12,10);
+        SSD1306_Puts ("Automatic", &Font_11x18, 1);
+        SSD1306_GotoXY (12, 30);
+        SSD1306_Puts ("Operation", &Font_11x18, 1);
+        SSD1306_UpdateScreen();
+        }
     else if (strcasecmp(token, "OFF") == 0) {
     	nfc_ready = false;
         HAL_UART_AbortReceive(&huart1);
     	HAL_UART_DeInit(&huart1);
-    	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
     	SSD1306_Clear();
@@ -352,7 +367,6 @@ static void uart_process_command(char *cmd)
     	cr95write(cmd_echo, sizeof(cmd_echo));
     	uint8_t resp = cr95read(NULL, NULL);
     	printf("ECHO %s %02X\n", (resp == 0x55) ? "yes" : "no", resp);
-    	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
     	SSD1306_Clear();
     	SSD1306_GotoXY (40,10);
     	SSD1306_Puts ("ECHO", &Font_11x18, 1);
@@ -361,7 +375,6 @@ static void uart_process_command(char *cmd)
     	SSD1306_UpdateScreen();
     	HAL_Delay(1000);
     	SSD1306_Clear();
-    	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
     }
     else if (strcasecmp(token, "IDN") == 0) {
     	char idn[28];
@@ -392,12 +405,16 @@ static void uart_process_command(char *cmd)
     }
     else if (strcasecmp(token, "READ") == 0) {
     	cr95_read();
-    	if (disp_len == 1) {
+    	// LED and BUZZER settings
+    	if (disp_len == 1 || disp_len == 2) {
     		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
-    		HAL_Delay(2000);
+    		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
+    		HAL_Delay(500);
+    		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
+    		HAL_Delay(2500);
     		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
     		}
-    	else {
+    	else if (disp_len == 3) {
     		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
     		HAL_Delay(2000);
     		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
@@ -443,14 +460,20 @@ static void uart_process_command(char *cmd)
 
 			cr95_init14();
         	cr95_read();
-
-        	if (disp_len == 1) HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
-        	if (disp_len == 2) HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
-
-        	HAL_Delay(3000);
-
-        	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-        	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+        	// nastavenie LED a BUZZER
+        	if (disp_len == 1 || disp_len == 2) {
+        		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
+        	    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
+        	    HAL_Delay(500);
+        	    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
+        	    HAL_Delay(2500);
+        	    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+        	}
+        	else if (disp_len == 3) {
+        	    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
+        	    HAL_Delay(2000);
+        	    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+        	}
 
         	SSD1306_Clear();
         	SSD1306_GotoXY (45,10);
@@ -478,7 +501,7 @@ static void uart_byte_available(uint8_t c)
     }
 }
 
-void manual_operation(void)
+void manual_operation(void)    // manual operation
 {
 	while (uart_rx_read_ptr != uart_rx_write_ptr) {
 		      uint8_t b = uart_rx_buf[uart_rx_read_ptr];
@@ -499,12 +522,13 @@ void manual_operation(void)
 		  }
 }
 
-void automatic_operation(void)
+void automatic_operation(void)    // Automatic operation
 {
 	printf_en = true;
-	uart_process_command("on");
+	uart_process_command("onauto");
 	HAL_Delay(5000);
 	uart_process_command("echo");
 	uart_process_command("auto");
 }
+
 

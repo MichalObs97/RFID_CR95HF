@@ -43,6 +43,14 @@ int _write(int file, char const *buf, int n);
 
 void manual_operation(void);
 
+/**
+ * @brief  Manual operation of the reader
+ */
+
 void automatic_operation(void);
+
+/**
+ * @brief  Automatic operation of the reader
+ */
 
 #endif /* INC_CR95HF_H_ */
